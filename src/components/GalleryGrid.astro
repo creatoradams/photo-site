@@ -1,0 +1,45 @@
+﻿---
+interface Props {
+  images: string[];
+  title: string;
+}
+const { images, title } = Astro.props;
+---
+<div class="gallery-grid" id="gallery" data-gallery-lightbox>
+  {images.map((src, i) => (
+    <a
+      href={src}
+      data-pswp-width="2400"
+      data-pswp-height="1600"
+      target="_blank"
+      rel="noreferrer"
+    >
+      <img src={src} alt={`${title} — image ${i + 1}`} loading={i < 6 ? "eager" : "lazy"} width="600" height="400" />
+    </a>
+  ))}
+</div>
+<script>
+  import PhotoSwipeLightbox from "photoswipe/lightbox";
+
+  let lightbox = null;
+
+  function initGalleryLightbox() {
+    const gallery = document.querySelector("[data-gallery-lightbox]");
+    if (!gallery) return;
+
+    if (lightbox) {
+      lightbox.destroy();
+      lightbox = null;
+    }
+
+    lightbox = new PhotoSwipeLightbox({
+      gallery: "[data-gallery-lightbox]",
+      children: "a",
+      pswpModule: () => import("photoswipe"),
+    });
+    lightbox.init();
+  }
+
+  initGalleryLightbox();
+  document.addEventListener("astro:page-load", initGalleryLightbox);
+</script>

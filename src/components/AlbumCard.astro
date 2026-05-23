@@ -1,0 +1,16 @@
+﻿---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  album: CollectionEntry<"albums">;
+}
+const { album } = Astro.props;
+const slug = album.id;
+---
+<a href={`/galleries/${slug}`} class="album-card">
+  <img src={album.data.cover} alt={album.data.title} loading="lazy" width="800" height="600" />
+  <div class="meta">
+    <h2>{album.data.title}</h2>
+    <time datetime={album.data.date.toISOString()}>{album.data.date.toLocaleDateString("en-US", { year: "numeric", month: "long" })}</time>
+  </div>
+</a>

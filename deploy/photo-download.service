@@ -1,0 +1,14 @@
+[Unit]
+Description=Photo site download service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/photo-site/service
+EnvironmentFile=/etc/photo-site/env
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

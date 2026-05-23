@@ -1,0 +1,52 @@
+﻿---
+import globalCss from "../styles/global.css?url";
+import "photoswipe/style.css";
+import { ClientRouter } from "astro:transitions";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import BaseHead from "../components/BaseHead.astro";
+import { SITE } from "../site.config";
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+}
+
+const { title, description = SITE.tagline, image, noindex = false } = Astro.props;
+const fullTitle =
+  title === "Home" ? `${SITE.title} — Photography` : `${title} | ${SITE.title}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={fullTitle} description={description} image={image} noindex={noindex} />
+    <link rel="stylesheet" href={globalCss} transition:persist="app-styles" />
+    <ClientRouter />
+  </head>
+  <body>
+    <Header transition:persist="site-header" />
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer transition:persist="site-footer" />
+    <script>
+      function updateNav() {
+        const pathname = window.location.pathname;
+        document.querySelectorAll(".nav a").forEach((link) => {
+          const href = link.getAttribute("href");
+          if (!href) return;
+          const isCurrent =
+            href === pathname ||
+            (href !== "/" && pathname.startsWith(href));
+          if (isCurrent) link.setAttribute("aria-current", "page");
+          else link.removeAttribute("aria-current");
+        });
+      }
+      updateNav();
+      document.addEventListener("astro:page-load", updateNav);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+adamsphoto.co, www.adamsphoto.co {
+    root * /var/www/photo-site
+    file_server
+
+    handle /api/* {
+        reverse_proxy localhost:8080
+    }
+
+    encode gzip zstd
+}

@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SITE } from "../site.config";
+---
+<Layout title="Contact" description={`Contact ${SITE.name}.`}>
+  <div class="container prose">
+    <h1 class="page-title">Contact</h1>
+    <p>
+      Email me at <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+    </p>
+  </div>
+</Layout>

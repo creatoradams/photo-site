@@ -1,0 +1,18 @@
+﻿---
+import Layout from "../../layouts/Layout.astro";
+import AlbumCard from "../../components/AlbumCard.astro";
+import { getCollection } from "astro:content";
+
+const albums = (await getCollection("albums")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+<Layout title="Galleries" description="Portfolio galleries and recent work.">
+  <div class="container">
+    <h1 class="page-title">Galleries</h1>
+    <p class="prose">Selected projects and collections.</p>
+    <div class="album-grid" style="margin-top: 2rem;">
+      {albums.map((album) => <AlbumCard album={album} />)}
+    </div>
+  </div>
+</Layout>

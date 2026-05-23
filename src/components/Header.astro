@@ -1,0 +1,27 @@
+﻿---
+import { SITE } from "../site.config";
+
+const nav = [
+  { href: "/", label: "Home" },
+  { href: "/galleries", label: "Galleries" },
+  { href: "/about", label: "About" },
+  { href: "/prints", label: "Prints" },
+  { href: "/contact", label: "Contact" },
+];
+const pathname = Astro.url.pathname;
+---
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="logo">{SITE.name}</a>
+    <nav class="nav" aria-label="Main">
+      {nav.map((item) => (
+        <a
+          href={item.href}
+          aria-current={pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "page" : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>

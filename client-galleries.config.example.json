@@ -1,0 +1,6 @@
+{
+  "sample-client": {
+    "allowedEmails": ["client@example.com"],
+    "localDir": "./deliveries/sample-client"
+  }
+}
