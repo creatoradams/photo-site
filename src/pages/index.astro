@@ -1,13 +1,6 @@
 ﻿---
 import Layout from "../layouts/Layout.astro";
-import AlbumCard from "../components/AlbumCard.astro";
-import { getCollection } from "astro:content";
 import { SITE } from "../site.config";
-
-const albums = (await getCollection("albums")).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
-const featured = albums.filter((a) => a.data.featured).slice(0, 3);
 ---
 <Layout title="Home" description={`Fine art and wedding photography by ${SITE.name}.`}>
   <div class="container">
@@ -16,13 +9,15 @@ const featured = albums.filter((a) => a.data.featured).slice(0, 3);
       <p>{SITE.tagline} Available worldwide.</p>
       <a href="/galleries" class="btn">View galleries</a>
     </section>
-    {featured.length > 0 && (
-      <section style="margin-top: 3rem;">
-        <h2 class="page-title" style="font-size: 1.5rem;">Featured work</h2>
-        <div class="album-grid">
-          {featured.map((album) => <AlbumCard album={album} />)}
-        </div>
-      </section>
-    )}
+    <section style="margin-top: 3rem;">
+      <h2 class="page-title" style="font-size: 1.5rem;">Featured work</h2>
+      <div class="album-grid" data-featured-galleries>
+        <p class="prose">Loading…</p>
+      </div>
+    </section>
   </div>
 </Layout>
+
+<script>
+  import "../scripts/galleries-public.ts";
+</script>

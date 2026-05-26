@@ -1,0 +1,18 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+<Layout title="Gallery" description="Portfolio gallery.">
+  <div class="container" data-gallery-detail>
+    <h1 class="page-title" data-gallery-title>Loading…</h1>
+    <p class="prose hidden" data-gallery-desc></p>
+    <p style="margin: 1rem 0;">
+      <a href="/prints" class="btn btn-secondary hidden" data-gallery-print target="_blank" rel="noreferrer">Order prints</a>
+      <a href="/galleries" class="btn btn-secondary" style="margin-left: 0.5rem">All galleries</a>
+    </p>
+    <div class="gallery-grid" style="margin-top: 2rem;" data-gallery-lightbox data-gallery-grid></div>
+  </div>
+</Layout>
+
+<script>
+  import "../../scripts/galleries-public.ts";
+</script>

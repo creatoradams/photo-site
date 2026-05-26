@@ -1,0 +1,77 @@
+---
+/** Shared modals for gallery management (used on /galleries) */
+---
+<div id="login-modal" class="modal hidden" role="dialog" aria-labelledby="login-modal-title">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-panel">
+    <h2 id="login-modal-title">Sign in to manage galleries</h2>
+    <p class="admin-muted">Enter your site password to add galleries and upload photos.</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" name="password" required autocomplete="current-password" />
+      </div>
+      <p id="login-error" class="message error hidden" role="alert"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="btn">Sign in</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="new-modal" class="modal hidden" role="dialog" aria-labelledby="new-modal-title">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-panel">
+    <h2 id="new-modal-title">New gallery</h2>
+    <div class="form-group">
+      <label for="new-title">Title</label>
+      <input type="text" id="new-title" required placeholder="Smith Wedding" />
+    </div>
+    <div class="form-group">
+      <label for="new-desc">Description</label>
+      <textarea id="new-desc" rows="3" class="admin-textarea"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="new-date">Date</label>
+      <input type="date" id="new-date" />
+    </div>
+    <label class="admin-check"><input type="checkbox" id="new-private" /> Private (hidden from visitors)</label>
+    <label class="admin-check"><input type="checkbox" id="new-featured" /> Featured on home page</label>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+      <button type="button" class="btn" id="new-create">Create gallery</button>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal" class="modal hidden" role="dialog" aria-labelledby="settings-modal-title">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-panel">
+    <h2 id="settings-modal-title">Gallery settings</h2>
+    <div class="form-group">
+      <label for="settings-title">Title</label>
+      <input type="text" id="settings-title" required />
+    </div>
+    <div class="form-group">
+      <label for="settings-desc">Description</label>
+      <textarea id="settings-desc" rows="3" class="admin-textarea"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="settings-date">Date</label>
+      <input type="date" id="settings-date" />
+    </div>
+    <div class="form-group">
+      <label for="settings-print">Print shop URL (optional)</label>
+      <input type="url" id="settings-print" placeholder="https://..." />
+    </div>
+    <label class="admin-check"><input type="checkbox" id="settings-private" /> Private (hidden from visitors)</label>
+    <label class="admin-check"><input type="checkbox" id="settings-featured" /> Featured on home page</label>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="settings-delete">Delete gallery</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+      <button type="button" class="btn" id="settings-save">Save</button>
+    </div>
+  </div>
+</div>

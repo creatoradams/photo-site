@@ -1,5 +1,6 @@
 ﻿User-agent: *
 Allow: /
 Disallow: /client/
+Disallow: /admin
 
-Sitemap: https://adamsphoto.co/sitemap-index.xml
+Sitemap: https://adamsphoto.net/sitemap-index.xml

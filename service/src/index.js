@@ -11,12 +11,19 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
+import { createPortfolioStore } from "./portfolio-store.js";
+import { createAdminAuth } from "./admin-auth.js";
+import { createPortfolioRoutes } from "./portfolio-routes.js";
+import { createAdminRoutes } from "./admin-routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
 const AUTH_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const SITE_URL = process.env.SITE_URL || "http://localhost:4321";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
+const portfolioStore = createPortfolioStore({ dataDir: DATA_DIR });
+const adminAuth = createAdminAuth({ authSecret: AUTH_SECRET, adminPassword: ADMIN_PASSWORD });
 const CLIENT_FILES_DIR = process.env.CLIENT_FILES_DIR || path.join(DATA_DIR, "client-files");
 const GALLERIES_PATH = path.join(DATA_DIR, "galleries.json");
 const SESSION_DAYS = 7;
@@ -92,7 +99,7 @@ async function sendMagicLink(slug, email, token) {
     return;
   }
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || "gallery@adamsphoto.co",
+    from: process.env.SMTP_FROM || "gallery@adamsphoto.net",
     to: email,
     subject: "Your gallery access link",
     text: `Click to access your gallery (expires in ${MAGIC_MINUTES} minutes):\n\n${link}\n`,
@@ -239,6 +246,9 @@ app.post("/api/download/zip", (req, res) => {
 });
 
 app.get("/api/health", (_, res) => res.json({ ok: true }));
+
+app.use("/api/portfolio", createPortfolioRoutes(portfolioStore));
+app.use("/api/admin", createAdminRoutes(portfolioStore, adminAuth));
 
 app.listen(PORT, () => {
   console.log(`Photo download service on :${PORT}`);

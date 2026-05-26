@@ -9,6 +9,7 @@
     "astro": "astro",
     "service:dev": "npm run dev --prefix service",
     "service:start": "npm run start --prefix service",
+    "deploy:live": "node scripts/deploy-live.mjs",
     "deploy-client": "node scripts/deploy-client.mjs",
     "send-magic-link": "node scripts/send-magic-link.mjs"
   },

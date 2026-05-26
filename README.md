@@ -16,6 +16,16 @@ Self-hosted portfolio (Astro) + private client galleries with magic-link access 
 2. VPS with Caddy or Nginx
 3. SMTP credentials (SendGrid, SES, etc.)
 
+## Manage galleries on adamsphoto.net
+
+1. Open **https://adamsphoto.net/galleries**
+2. Click **+ Add gallery** (top right)
+3. Sign in with your `ADMIN_PASSWORD` (set on the server — see `deploy/DEPLOY-LIVE.md`)
+4. Create a gallery, then **+ Add photos from computer**
+5. Use **Settings** for private, featured, description, print URL
+
+No localhost needed. After code changes, run `npm run build` and `npm run deploy:live` (see `deploy/DEPLOY-LIVE.md`).
+
 ## Local setup
 
 ```bash
@@ -24,7 +34,7 @@ npm install
 cd service && npm install && cd ..
 
 cp .env.example service/.env
-# Edit service/.env: AUTH_SECRET, SITE_URL, SMTP_*
+# Edit service/.env: AUTH_SECRET, ADMIN_PASSWORD, SITE_URL, SMTP_*
 
 cp client-galleries.config.example.json client-galleries.config.json
 ```
@@ -61,9 +71,11 @@ Without SMTP, magic links are printed in the service console.
 3. `npm run deploy-client -- my-client`
 4. Send client: `https://yourdomain.com/client/my-client`
 
-## Production deploy (adamsphoto.co)
+## Production deploy (adamsphoto.net)
 
-**Full step-by-step:** [`deploy/VPS-SETUP.md`](deploy/VPS-SETUP.md) — Ubuntu VPS, Node 20+, Caddy, systemd, DNS.
+**Update live site:** [`deploy/DEPLOY-LIVE.md`](deploy/DEPLOY-LIVE.md)
+
+**First-time VPS setup:** [`deploy/VPS-SETUP.md`](deploy/VPS-SETUP.md)
 
 Quick rsync after build:
 

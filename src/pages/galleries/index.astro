@@ -1,18 +1,38 @@
 ﻿---
 import Layout from "../../layouts/Layout.astro";
-import AlbumCard from "../../components/AlbumCard.astro";
-import { getCollection } from "astro:content";
-
-const albums = (await getCollection("albums")).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
+import GalleryManageModals from "../../components/GalleryManageModals.astro";
 ---
 <Layout title="Galleries" description="Portfolio galleries and recent work.">
-  <div class="container">
-    <h1 class="page-title">Galleries</h1>
-    <p class="prose">Selected projects and collections.</p>
-    <div class="album-grid" style="margin-top: 2rem;">
-      {albums.map((album) => <AlbumCard album={album} />)}
-    </div>
+  <div class="container admin-page">
+    <header class="galleries-page-header">
+      <div>
+        <h1 class="page-title" style="margin:0">Galleries</h1>
+        <p class="prose" style="margin:0.35rem 0 0">Selected projects and collections.</p>
+      </div>
+      <div id="manage-toolbar" class="galleries-toolbar"></div>
+    </header>
+
+    <section id="public-galleries-view">
+      <div class="album-grid" style="margin-top: 1.5rem;" data-galleries-list>
+        <p class="prose">Loading galleries…</p>
+      </div>
+    </section>
+
+    <section id="manage-galleries-view" class="hidden">
+      <p class="admin-muted" style="margin: 1rem 0 0.5rem">Add photos from your computer, set private, or edit settings per gallery.</p>
+      <div class="admin-layout" style="margin-top: 1rem;">
+        <aside class="admin-sidebar" id="admin-gallery-list" aria-label="Your galleries"></aside>
+        <main class="admin-main" id="admin-detail">
+          <p class="prose admin-muted">Select a gallery or click <strong>+ New gallery</strong>.</p>
+        </main>
+      </div>
+      <p id="upload-status" class="message success hidden" role="status"></p>
+    </section>
   </div>
+
+  <GalleryManageModals />
 </Layout>
+
+<script>
+  import "../../scripts/galleries-page.ts";
+</script>

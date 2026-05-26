@@ -7,4 +7,5 @@ dist/
 client-galleries.config.json
 deliveries/
 service/data/
+!service/data/.gitkeep
 *.log

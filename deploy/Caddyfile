@@ -1,4 +1,4 @@
-adamsphoto.co, www.adamsphoto.co {
+adamsphoto.net, www.adamsphoto.net {
     root * /var/www/photo-site
     file_server
 
@@ -7,4 +7,9 @@ adamsphoto.co, www.adamsphoto.co {
     }
 
     encode gzip zstd
+}
+
+# Optional: redirect old domain
+adamsphoto.co, www.adamsphoto.co {
+    redir https://adamsphoto.net{uri} permanent
 }

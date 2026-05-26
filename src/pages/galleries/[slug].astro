@@ -1,24 +1,19 @@
 ---
-import Layout from "../../layouts/Layout.astro";
-import GalleryGrid from "../../components/GalleryGrid.astro";
-import { getCollection } from "astro:content";
-
-export async function getStaticPaths() {
-  const albums = await getCollection("albums");
-  return albums.map((album) => ({
-    params: { slug: album.id },
-    props: { album },
-  }));
+/** Legacy /galleries/:slug URLs → dynamic viewer */
+export function getStaticPaths() {
+  return [{ params: { slug: "sample-wedding" } }];
 }
-
-const { album } = Astro.props;
+const slug = Astro.params.slug;
 ---
-<Layout title={album.data.title} description={album.data.description ?? album.data.title} image={album.data.cover}>
-  <div class="container">
-    <h1 class="page-title">{album.data.title}</h1>
-    {album.data.description && <p class="prose">{album.data.description}</p>}
-    <div style="margin-top: 2rem;">
-      <GalleryGrid images={album.data.images} title={album.data.title} />
-    </div>
-  </div>
-</Layout>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=/galleries/view?slug=${slug}`} />
+    <link rel="canonical" href={`/galleries/view?slug=${slug}`} />
+    <title>Redirecting…</title>
+  </head>
+  <body>
+    <p><a href={`/galleries/view?slug=${slug}`}>Continue to gallery</a></p>
+  </body>
+</html>

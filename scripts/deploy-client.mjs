@@ -69,4 +69,4 @@ console.log(`\nDeployed ${slug} to ${serviceData}`);
 console.log(`Manifest: ${manifest.files.length} files`);
 console.log("\nNext: rsync service/data/client-files/ to your VPS /data/client-files/");
 console.log("Copy service/data/galleries.json to VPS /etc/photo-site/ or service/data/");
-console.log(`Share: ${process.env.SITE_URL || "https://adamsphoto.co"}/client/${slug}`);
+console.log(`Share: ${process.env.SITE_URL || "https://adamsphoto.net"}/client/${slug}`);
