@@ -18,13 +18,19 @@ Self-hosted portfolio (Astro) + private client galleries with magic-link access 
 
 ## Manage galleries on adamsphoto.net
 
-1. Open **https://adamsphoto.net/galleries**
-2. Click **+ Add gallery** (top right)
-3. Sign in with your `ADMIN_PASSWORD` (set on the server — see `deploy/DEPLOY-LIVE.md`)
-4. Create a gallery, then **+ Add photos from computer**
-5. Use **Settings** for private, featured, description, print URL
+**Bookmark this** (not linked on the public site):
 
-No localhost needed. After code changes, run `npm run build` and `npm run deploy:live` (see `deploy/DEPLOY-LIVE.md`).
+**https://adamsphoto.net/galleries/manage**  
+(shortcut: **https://adamsphoto.net/manage**)
+
+1. Open that URL and sign in with your `ADMIN_PASSWORD`
+2. **+ New gallery** → create a collection
+3. **+ Add photos from computer** → upload
+4. **Settings** → mark **Private** (unlisted; share the gallery link) or public
+
+Public visitors only see **https://adamsphoto.net/galleries** — no upload button.
+
+After code changes, run `npm run build` and deploy (see `deploy/DEPLOY-LIVE.md`).
 
 ## Local setup
 

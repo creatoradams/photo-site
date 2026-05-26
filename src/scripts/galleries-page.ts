@@ -74,7 +74,6 @@ async function logout() {
   await api("/api/admin/logout", { method: "POST" });
   state.authenticated = false;
   state.selected = null;
-  setManageMode(false);
 }
 
 async function loadAdminGalleries() {
@@ -83,19 +82,25 @@ async function loadAdminGalleries() {
   return galleries;
 }
 
+function isManagePage() {
+  return !!document.querySelector("[data-manage-page]");
+}
+
 function renderManageToolbar() {
-  const toolbar = $("#manage-toolbar");
+  const toolbar = document.querySelector<HTMLElement>("#manage-toolbar");
+  if (!toolbar || !isManagePage()) return;
+
   if (state.authenticated) {
+    toolbar.classList.remove("hidden");
     toolbar.innerHTML = `
       <button type="button" class="btn" id="btn-new-gallery">+ New gallery</button>
-      <button type="button" class="btn btn-secondary" id="btn-view-public">View public page</button>
+      <a href="/galleries" class="btn btn-secondary">View public galleries</a>
       <button type="button" class="btn btn-secondary" id="btn-logout">Sign out</button>`;
     $("#btn-new-gallery", toolbar).addEventListener("click", openNewGallery);
-    $("#btn-view-public", toolbar).addEventListener("click", () => setManageMode(false));
     $("#btn-logout", toolbar).addEventListener("click", () => logout().then(() => renderChrome()));
   } else {
-    toolbar.innerHTML = `<button type="button" class="btn" id="btn-open-login">+ Add gallery</button>`;
-    $("#btn-open-login", toolbar).addEventListener("click", openLogin);
+    toolbar.classList.add("hidden");
+    toolbar.innerHTML = "";
   }
 }
 
@@ -301,8 +306,8 @@ function openLogin() {
 }
 
 function setManageMode(on: boolean) {
+  if (!isManagePage()) return;
   state.manageMode = on;
-  show($("#public-galleries-view"), !on);
   show($("#manage-galleries-view"), on && state.authenticated);
   if (on && state.authenticated) {
     refreshManage();
@@ -311,25 +316,21 @@ function setManageMode(on: boolean) {
     }
   }
   if (on && !state.authenticated) openLogin();
-  const url = new URL(location.href);
-  if (on) url.searchParams.set("manage", "1");
-  else url.searchParams.delete("manage");
-  history.replaceState({}, "", url);
 }
 
 function renderChrome() {
+  if (!isManagePage()) return;
   renderManageToolbar();
-  if (state.authenticated && state.manageMode) {
+  if (state.authenticated) {
     setManageMode(true);
   } else {
     show($("#manage-galleries-view"), false);
-    show($("#public-galleries-view"), true);
+    openLogin();
   }
 }
 
 async function init() {
-  const params = new URLSearchParams(location.search);
-  const wantManage = params.get("manage") === "1";
+  if (!isManagePage()) return;
 
   document.querySelectorAll("[data-close-modal]").forEach((btn) => {
     btn.addEventListener("click", () => show(btn.closest(".modal") as HTMLElement, false));
@@ -353,9 +354,7 @@ async function init() {
   $("#new-create").addEventListener("click", () => createGallery().catch((e) => alert(e.message)));
 
   const authed = await checkSession();
-  await loadPublicGalleries();
   renderChrome();
-  if (wantManage) setManageMode(true);
 }
 
 init();

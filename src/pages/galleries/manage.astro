@@ -1,0 +1,31 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GalleryManageModals from "../../components/GalleryManageModals.astro";
+---
+<Layout title="Manage galleries" description="Photographer gallery management." noindex>
+  <div class="container admin-page" data-manage-page>
+    <header class="galleries-page-header">
+      <div>
+        <h1 class="page-title" style="margin:0">Manage galleries</h1>
+        <p class="admin-muted" style="margin:0.35rem 0 0">Sign in to upload photos and edit collections. This page is not linked on the public site.</p>
+      </div>
+      <div id="manage-toolbar" class="galleries-toolbar"></div>
+    </header>
+
+    <section id="manage-galleries-view">
+      <div class="admin-layout" style="margin-top: 1rem;">
+        <aside class="admin-sidebar" id="admin-gallery-list" aria-label="Your galleries"></aside>
+        <main class="admin-main" id="admin-detail">
+          <p class="prose admin-muted">Sign in to get started.</p>
+        </main>
+      </div>
+      <p id="upload-status" class="message success hidden" role="status"></p>
+    </section>
+  </div>
+
+  <GalleryManageModals />
+</Layout>
+
+<script>
+  import "../../scripts/galleries-page.ts";
+</script>

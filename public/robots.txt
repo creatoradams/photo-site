@@ -2,5 +2,7 @@
 Allow: /
 Disallow: /client/
 Disallow: /admin
+Disallow: /manage
+Disallow: /galleries/manage
 
 Sitemap: https://adamsphoto.net/sitemap-index.xml
