@@ -9,8 +9,9 @@ export function createPortfolioRoutes(store) {
     res.json({ galleries: store.listGalleries({ includePrivate: false }) });
   });
 
+  // Public listing hides private albums; direct link works for anyone you share it with.
   router.get("/galleries/:slug", (req, res) => {
-    const gallery = store.getGallery(req.params.slug, { includePrivate: false });
+    const gallery = store.getGallery(req.params.slug, { includePrivate: true });
     if (!gallery) return res.status(404).json({ error: "Not found" });
     res.json({ gallery });
   });

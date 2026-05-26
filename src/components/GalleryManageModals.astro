@@ -4,8 +4,8 @@
 <div id="login-modal" class="modal hidden" role="dialog" aria-labelledby="login-modal-title">
   <div class="modal-backdrop" data-close-modal></div>
   <div class="modal-panel">
-    <h2 id="login-modal-title">Sign in to manage galleries</h2>
-    <p class="admin-muted">Enter your site password to add galleries and upload photos.</p>
+    <h2 id="login-modal-title">Photographer sign-in</h2>
+    <p class="admin-muted">Only you need this password — to upload and edit. Visitors never need a password to view public galleries.</p>
     <form id="login-form">
       <div class="form-group">
         <label for="login-password">Password</label>
@@ -36,7 +36,7 @@
       <label for="new-date">Date</label>
       <input type="date" id="new-date" />
     </div>
-    <label class="admin-check"><input type="checkbox" id="new-private" /> Private (hidden from visitors)</label>
+    <label class="admin-check"><input type="checkbox" id="new-private" /> Private (hidden from gallery page — share the link with clients)</label>
     <label class="admin-check"><input type="checkbox" id="new-featured" /> Featured on home page</label>
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
@@ -65,7 +65,7 @@
       <label for="settings-print">Print shop URL (optional)</label>
       <input type="url" id="settings-print" placeholder="https://..." />
     </div>
-    <label class="admin-check"><input type="checkbox" id="settings-private" /> Private (hidden from visitors)</label>
+    <label class="admin-check"><input type="checkbox" id="settings-private" /> Private (unlisted — share the gallery link with clients)</label>
     <label class="admin-check"><input type="checkbox" id="settings-featured" /> Featured on home page</label>
     <div class="modal-actions">
       <button type="button" class="btn btn-danger" id="settings-delete">Delete gallery</button>

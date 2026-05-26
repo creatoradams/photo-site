@@ -432,6 +432,16 @@ main,
   margin: 0.25rem 0 0;
 }
 
+.admin-share-link {
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+  word-break: break-all;
+}
+
+.admin-share-link a {
+  color: var(--accent);
+}
+
 .admin-login {
   max-width: 400px;
   margin: 2rem auto;

@@ -18,6 +18,10 @@ function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 }
 
+function shareUrl(slug: string) {
+  return `${location.origin}/galleries/view?slug=${encodeURIComponent(slug)}`;
+}
+
 function show(el: HTMLElement | null, visible: boolean) {
   if (!el) return;
   el.classList.toggle("hidden", !visible);
@@ -128,7 +132,8 @@ function renderGalleryDetail(g: PortfolioGallery) {
     <div class="admin-detail-header">
       <div>
         <h2>${escapeHtml(g.title)}</h2>
-        <p class="admin-muted">${g.private ? "Private — only you see this on the public list" : "Public"} · <a href="/galleries/view?slug=${encodeURIComponent(g.slug)}" target="_blank" rel="noreferrer">Preview</a></p>
+        <p class="admin-muted">${g.private ? "Private — hidden from /galleries; share link below" : "Public — listed on /galleries"}</p>
+        <p class="admin-share-link"><strong>Link:</strong> <a href="${shareUrl(g.slug)}" target="_blank" rel="noreferrer">${shareUrl(g.slug)}</a></p>
       </div>
       <div class="admin-detail-actions">
         <button type="button" class="btn btn-secondary" id="btn-settings">Settings</button>
