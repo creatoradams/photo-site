@@ -2,15 +2,16 @@
 import Layout from "../../layouts/Layout.astro";
 ---
 <Layout title="Galleries" description="Portfolio galleries and recent work.">
-  <div class="container">
-    <header class="galleries-page-header">
-      <div>
-        <h1 class="page-title" style="margin:0">Galleries</h1>
-        <p class="prose" style="margin:0.35rem 0 0">Selected projects and collections.</p>
+  <div class="container studio-page" data-site-page="galleries">
+    <header class="studio-page-header galleries-page-header">
+      <p class="studio-hero__eyebrow" data-page-eyebrow>Portfolio</p>
+      <h1 class="page-title" style="margin:0" data-page-title>Galleries</h1>
+      <div class="prose galleries-page-intro" style="margin:0.5rem 0 0" data-page-body>
+        <p>Loading…</p>
       </div>
     </header>
 
-    <div class="album-grid" style="margin-top: 1.5rem;" data-galleries-list>
+    <div class="galleries-editorial-list" data-galleries-list>
       <p class="prose">Loading galleries…</p>
     </div>
   </div>
@@ -18,4 +19,5 @@ import Layout from "../../layouts/Layout.astro";
 
 <script>
   import "../../scripts/galleries-public.ts";
+  import "../../scripts/site-page.ts";
 </script>

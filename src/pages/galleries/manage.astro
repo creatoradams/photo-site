@@ -2,15 +2,33 @@
 import Layout from "../../layouts/Layout.astro";
 import GalleryManageModals from "../../components/GalleryManageModals.astro";
 ---
-<Layout title="Manage galleries" description="Photographer gallery management." noindex>
+<Layout title="Manage site" description="Photographer site management." noindex>
   <div class="container admin-page" data-manage-page>
     <header class="galleries-page-header">
       <div>
-        <h1 class="page-title" style="margin:0">Manage galleries</h1>
-        <p class="admin-muted" style="margin:0.35rem 0 0">Sign in to upload photos and edit collections. This page is not linked on the public site.</p>
+        <h1 class="page-title" style="margin:0">Manage site</h1>
+        <p class="admin-muted" style="margin:0.35rem 0 0">Edit galleries, home page, and site pages. This page is not linked on the public site.</p>
       </div>
       <div id="manage-toolbar" class="galleries-toolbar"></div>
     </header>
+
+    <nav class="manage-tabs" aria-label="Manage sections">
+      <button type="button" class="manage-tab active" data-manage-tab="galleries">Galleries</button>
+      <button type="button" class="manage-tab" data-manage-tab="home">Home</button>
+      <button type="button" class="manage-tab" data-manage-tab="portfolio">Portfolio page</button>
+      <button type="button" class="manage-tab" data-manage-tab="about">About</button>
+      <button type="button" class="manage-tab" data-manage-tab="prints">Prints</button>
+      <button type="button" class="manage-tab" data-manage-tab="contact">Contact</button>
+    </nav>
+
+    <section class="site-editor-section site-editor-section--wide admin-storage" style="margin-top: 1rem;" data-manage-storage>
+      <h3 style="margin-top:0;">Storage usage</h3>
+      <p class="admin-muted" id="storage-status">Loading…</p>
+      <div id="storage-body" class="prose" style="margin-top: 0.5rem;"></div>
+      <div style="margin-top: 0.75rem;">
+        <button type="button" class="btn btn-secondary" id="btn-refresh-storage">Refresh</button>
+      </div>
+    </section>
 
     <section id="manage-galleries-view">
       <div class="admin-layout" style="margin-top: 1rem;">
@@ -21,6 +39,12 @@ import GalleryManageModals from "../../components/GalleryManageModals.astro";
       </div>
       <p id="upload-status" class="message success hidden" role="status"></p>
     </section>
+
+    <section id="manage-pages-view" class="hidden" style="margin-top: 1rem;">
+      <main id="manage-page-editor" class="admin-main admin-main--wide">
+        <p class="prose admin-muted">Select a tab above to edit site pages.</p>
+      </main>
+    </section>
   </div>
 
   <GalleryManageModals />
@@ -28,4 +52,6 @@ import GalleryManageModals from "../../components/GalleryManageModals.astro";
 
 <script>
   import "../../scripts/galleries-page.ts";
+  import { initSiteManage } from "../../scripts/site-manage.ts";
+  initSiteManage();
 </script>

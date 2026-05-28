@@ -1,11 +1,21 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { SITE } from "../site.config";
 ---
-<Layout title="About" description={`About ${SITE.name} — wedding and portrait photography.`}>
-  <div class="container prose">
-    <h1 class="page-title">About</h1>
-    <p>I'm a photographer specializing in weddings, portraits, and editorial work.</p>
-    <p>Available for commissions worldwide. Get in touch to discuss your project.</p>
+<Layout title="About" description="About adamsphoto — wedding and portrait photography.">
+  <div data-site-page="about" class="about-hero--studio">
+    <section class="about-hero" data-about-hero>
+      <div class="about-hero-bg" data-about-hero-bg aria-hidden="true"></div>
+      <div class="about-hero-content container">
+        <h1 class="page-title about-hero-title" data-page-title>About</h1>
+        <div class="prose about-hero-text" data-page-body><p>Loading…</p></div>
+      </div>
+    </section>
+    <section class="about-accent-section container hidden" data-about-accent>
+      <img class="about-accent-img" data-about-accent-img alt="" loading="lazy" width="1200" height="800" />
+    </section>
   </div>
 </Layout>
+
+<script>
+  import "../scripts/site-page.ts";
+</script>

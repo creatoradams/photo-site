@@ -83,7 +83,7 @@ function renderGalleryDetail(g: PortfolioGallery) {
         <button type="button" class="btn btn-secondary" id="btn-settings">Settings</button>
         <label class="btn admin-upload-btn">
           + Add photos
-          <input type="file" id="upload-input" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <input type="file" id="upload-input" accept="image/*" multiple hidden />
         </label>
       </div>
     </div>

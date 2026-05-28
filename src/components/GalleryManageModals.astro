@@ -65,6 +65,12 @@
       <label for="settings-print">Print shop URL (optional)</label>
       <input type="url" id="settings-print" placeholder="https://..." />
     </div>
+    <div id="settings-cover-section" class="form-group hidden">
+      <label>Gallery cover photo</label>
+      <p class="admin-muted" style="margin:0 0 0.5rem">This image appears on the galleries page. Click a photo to select it.</p>
+      <div id="settings-cover-grid" class="admin-cover-picker"></div>
+      <input type="hidden" id="settings-cover" value="" />
+    </div>
     <label class="admin-check"><input type="checkbox" id="settings-private" /> Private (unlisted — share the gallery link with clients)</label>
     <label class="admin-check"><input type="checkbox" id="settings-featured" /> Featured on home page</label>
     <div class="modal-actions">

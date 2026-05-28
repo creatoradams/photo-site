@@ -25,6 +25,7 @@ if (!fs.existsSync(path.join(root, "dist"))) {
 const cmds = [
   `rsync -avz --delete "${root}/dist/" ${host}:/var/www/photo-site/`,
   `rsync -avz --exclude node_modules --exclude data/tokens.db "${root}/service/" ${host}:/opt/photo-site/service/`,
+  `ssh ${host} "find /var/www/photo-site -type d -exec chmod 755 {} \\; && find /var/www/photo-site -type f -exec chmod 644 {} \\;"`,
   `ssh ${host} "cd /opt/photo-site/service && npm ci --omit=dev && systemctl restart photo-download"`,
 ];
 

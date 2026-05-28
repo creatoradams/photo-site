@@ -1,3 +1,4 @@
+import { downloadImages, safeFilenameBase } from "./download-images";
 
 export function initClientGallery(slug: string) {
   const gate = document.getElementById("gate");
@@ -85,25 +86,22 @@ export function initClientGallery(slug: string) {
     finally { btn.disabled = false; }
   });
 
-  const downloadZip = async (fileList: string[] | null) => {
+  const downloadPhotos = async (fileList: string[] | null) => {
+    const names = fileList ?? files.map((f) => f.name);
+    if (!names.length) return;
+    const base = safeFilenameBase(slug);
+    const items = names.map((name, i) => ({
+      url: `/api/preview?gallery=${encodeURIComponent(slug)}&file=${encodeURIComponent(name)}&full=1`,
+      filename: `${base}-${String(i + 1).padStart(3, "0")}${name.includes(".") ? name.slice(name.lastIndexOf(".")) : ".jpg"}`,
+    }));
+
     downloadStatus?.classList.remove("hidden");
     downloadSelected.disabled = downloadAll.disabled = true;
     try {
-      const res = await fetch("/api/download/zip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ gallery: slug, files: fileList }),
-      });
-      if (!res.ok) throw new Error("fail");
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = slug + ".zip";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch { alert("Download failed."); }
-    finally {
+      await downloadImages(items);
+    } catch {
+      alert("Download failed.");
+    } finally {
       downloadStatus?.classList.add("hidden");
       downloadSelected.disabled = selected.size === 0;
       downloadAll.disabled = false;
@@ -112,8 +110,8 @@ export function initClientGallery(slug: string) {
 
   document.getElementById("select-all")?.addEventListener("click", () => { files.forEach(f => selected.add(f.name)); renderGrid(); });
   document.getElementById("clear-all")?.addEventListener("click", () => { selected.clear(); renderGrid(); });
-  downloadSelected?.addEventListener("click", () => downloadZip([...selected]));
-  downloadAll?.addEventListener("click", () => downloadZip(null));
+  downloadSelected?.addEventListener("click", () => downloadPhotos([...selected]));
+  downloadAll?.addEventListener("click", () => downloadPhotos(null));
   document.getElementById("logout-btn")?.addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     location.reload();

@@ -3,21 +3,14 @@ import Layout from "../layouts/Layout.astro";
 import { SITE } from "../site.config";
 ---
 <Layout title="Home" description={`Fine art and wedding photography by ${SITE.name}.`}>
-  <div class="container">
-    <section class="hero">
-      <h1>Moments, thoughtfully captured</h1>
-      <p>{SITE.tagline} Available worldwide.</p>
-      <a href="/galleries" class="btn">View galleries</a>
-    </section>
-    <section style="margin-top: 3rem;">
-      <h2 class="page-title" style="font-size: 1.5rem;">Featured work</h2>
-      <div class="album-grid" data-featured-galleries>
-        <p class="prose">Loading…</p>
-      </div>
+  <div data-home-page>
+    <section class="home-landing home-landing--atelier" data-home-landing>
+      <section id="home-film" class="atelier-film hidden" data-atelier-film aria-label="Galleries">
+        <div class="atelier-film__track" data-atelier-film-track></div>
+      </section>
     </section>
   </div>
+  <script>
+    import "../scripts/home-page.ts";
+  </script>
 </Layout>
-
-<script>
-  import "../scripts/galleries-public.ts";
-</script>

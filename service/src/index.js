@@ -15,23 +15,56 @@ import { createPortfolioStore } from "./portfolio-store.js";
 import { createAdminAuth } from "./admin-auth.js";
 import { createPortfolioRoutes } from "./portfolio-routes.js";
 import { createAdminRoutes } from "./admin-routes.js";
+import { createSiteContentStore } from "./site-content-store.js";
+import { createSiteRoutes } from "./site-routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
 const AUTH_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
+if (process.env.NODE_ENV === "production" && AUTH_SECRET === "dev-secret-change-me") {
+  console.error("FATAL: AUTH_SECRET is the default dev value. Set a strong secret in .env before running in production.");
+  process.exit(1);
+}
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const SITE_URL = process.env.SITE_URL || "http://localhost:4321";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
 const portfolioStore = createPortfolioStore({ dataDir: DATA_DIR });
+const siteStore = createSiteContentStore({ dataDir: DATA_DIR, portfolioStore });
 const adminAuth = createAdminAuth({ authSecret: AUTH_SECRET, adminPassword: ADMIN_PASSWORD });
 const CLIENT_FILES_DIR = process.env.CLIENT_FILES_DIR || path.join(DATA_DIR, "client-files");
 const GALLERIES_PATH = path.join(DATA_DIR, "galleries.json");
 const SESSION_DAYS = 7;
 const MAGIC_MINUTES = 45;
 
+const ALLOWED_ORIGINS = process.env.SITE_URL
+  ? [process.env.SITE_URL, "http://localhost:4321", "http://localhost:3000"]
+  : ["http://localhost:4321", "http://localhost:3000"];
+
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+
+// Security headers
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none';"
+  );
+  next();
+});
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow same-origin (no origin header) and explicit allowed origins
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error("CORS: origin not allowed"));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
 
 const db = new Database(path.join(DATA_DIR, "tokens.db"));
@@ -215,7 +248,8 @@ app.get("/api/preview", (req, res) => {
   const dir = galleryDir(slug);
   const thumb = path.join(dir, "thumbs", file.replace(/\.[^.]+$/, ".webp"));
   const full = path.join(dir, file);
-  const target = fs.existsSync(thumb) ? thumb : full;
+  const wantFull = req.query.full === "1";
+  const target = wantFull ? full : fs.existsSync(thumb) ? thumb : full;
   if (!fs.existsSync(target)) return res.status(404).end();
   res.sendFile(path.resolve(target));
 });
@@ -248,7 +282,8 @@ app.post("/api/download/zip", (req, res) => {
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
 app.use("/api/portfolio", createPortfolioRoutes(portfolioStore));
-app.use("/api/admin", createAdminRoutes(portfolioStore, adminAuth));
+app.use("/api/site", createSiteRoutes(siteStore));
+app.use("/api/admin", createAdminRoutes(portfolioStore, adminAuth, siteStore));
 
 app.listen(PORT, () => {
   console.log(`Photo download service on :${PORT}`);

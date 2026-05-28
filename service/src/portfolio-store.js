@@ -84,19 +84,57 @@ export function createPortfolioStore({ dataDir }) {
       printCollectionUrl: g.printCollectionUrl || "",
       cover: cover ? imageUrl(g.slug, cover) : null,
       imageCount: (g.images || []).length,
-      images: (g.images || []).map((name) => ({
-        name,
-        url: imageUrl(g.slug, name),
-        thumbUrl: imageUrl(g.slug, name, true),
-      })),
+      images: (g.images || []).map((name) => {
+        const meta = g.imageMeta?.[name];
+        return {
+          name,
+          url: imageUrl(g.slug, name),
+          thumbUrl: imageUrl(g.slug, name, "thumb"),
+          gridUrl: imageUrl(g.slug, name, "grid"),
+          displayUrl: imageUrl(g.slug, name, "display"),
+          width: meta?.width ?? null,
+          height: meta?.height ?? null,
+        };
+      }),
       createdAt: g.createdAt,
       updatedAt: g.updatedAt,
     };
   }
 
-  function imageUrl(slug, filename, thumb = false) {
+  function imageUrl(slug, filename, size = false) {
     const base = `/api/portfolio/images/${encodeURIComponent(slug)}/${encodeURIComponent(filename)}`;
-    return thumb ? `${base}?size=thumb` : base;
+    if (size === "thumb") return `${base}?size=thumb`;
+    if (size === "grid") return `${base}?size=grid`;
+    if (size === "display") return `${base}?size=display`;
+    return base;
+  }
+
+  async function readImageDimensions(filePath) {
+    const meta = await sharp(filePath).rotate().metadata();
+    return {
+      width: meta.width || 2400,
+      height: meta.height || 1600,
+    };
+  }
+
+  async function ensureGalleryImageMeta(slug) {
+    const catalog = readCatalog();
+    const g = catalog.galleries[slug];
+    if (!g) return;
+    let dirty = false;
+    if (!g.imageMeta) g.imageMeta = {};
+    for (const name of g.images || []) {
+      if (g.imageMeta[name]?.width) continue;
+      const fp = path.join(galleryDir(slug), name);
+      if (!fs.existsSync(fp)) continue;
+      try {
+        g.imageMeta[name] = await readImageDimensions(fp);
+        dirty = true;
+      } catch (e) {
+        console.error("Could not read image dimensions:", name, e);
+      }
+    }
+    if (dirty) writeCatalog(catalog);
   }
 
   function createGallery({ title, description, date, private: isPrivate, featured, printCollectionUrl }) {
@@ -151,6 +189,50 @@ export function createPortfolioStore({ dataDir }) {
     return true;
   }
 
+  const ALLOWED_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tif", ".tiff"]);
+
+  async function saveUploadedImage(file, destPath, ext) {
+    const extLower = ext.toLowerCase();
+
+    // HEIC/HEIF: convert to max-quality JPEG (required for broad browser support).
+    if (extLower === ".heic" || extLower === ".heif") {
+      const jpgPath = destPath.replace(/\.[^.]+$/, ".jpg");
+      await sharp(file.buffer)
+        .rotate()
+        .jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: "4:4:4" })
+        .toFile(jpgPath);
+      return path.basename(jpgPath);
+    }
+
+    // JPEG: keep original bytes when possible; rotate only when EXIF orientation requires it.
+    if (extLower === ".jpg" || extLower === ".jpeg") {
+      const meta = await sharp(file.buffer).metadata();
+      if (meta.orientation && meta.orientation > 1) {
+        await sharp(file.buffer)
+          .rotate()
+          .jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: "4:4:4" })
+          .toFile(destPath);
+      } else {
+        fs.writeFileSync(destPath, file.buffer);
+      }
+      return path.basename(destPath);
+    }
+
+    // PNG / WebP / TIFF: store without resizing or lossy recompression.
+    if (extLower === ".png" || extLower === ".webp" || extLower === ".tif" || extLower === ".tiff") {
+      fs.writeFileSync(destPath, file.buffer);
+      return path.basename(destPath);
+    }
+
+    // Unknown image type: normalize to max-quality JPEG without resizing.
+    const jpgPath = destPath.replace(/\.[^.]+$/, ".jpg");
+    await sharp(file.buffer)
+      .rotate()
+      .jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: "4:4:4" })
+      .toFile(jpgPath);
+    return path.basename(jpgPath);
+  }
+
   async function addImages(slug, files) {
     const catalog = readCatalog();
     const g = catalog.galleries[slug];
@@ -158,25 +240,43 @@ export function createPortfolioStore({ dataDir }) {
     const dir = galleryDir(slug);
     fs.mkdirSync(dir, { recursive: true });
     const added = [];
+    const skipped = [];
 
-    for (const file of files) {
-      const ext = path.extname(file.originalname || "").toLowerCase();
-      if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) continue;
-      const name = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.webp`;
+    for (const file of files || []) {
+      let ext = path.extname(file.originalname || "").toLowerCase();
+      const mime = (file.mimetype || "").toLowerCase();
+      const okExt = ALLOWED_EXT.has(ext) || mime.startsWith("image/");
+      if (!okExt) {
+        skipped.push({ name: file.originalname || "file", reason: "Unsupported file type" });
+        continue;
+      }
+      if (!ext && mime.includes("jpeg")) ext = ".jpg";
+      if (!ext && mime.includes("png")) ext = ".png";
+      if (!ext && mime.includes("webp")) ext = ".webp";
+      if (!ext) ext = ".jpg";
+
+      const name = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}${ext}`;
       const dest = path.join(dir, name);
-      await sharp(file.buffer)
-        .rotate()
-        .resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true })
-        .webp({ quality: 85 })
-        .toFile(dest);
-      g.images.push(name);
-      added.push(name);
-      if (!g.cover) g.cover = name;
+      try {
+        const savedName = await saveUploadedImage(file, dest, ext);
+        g.images.push(savedName);
+        if (!g.imageMeta) g.imageMeta = {};
+        try {
+          g.imageMeta[savedName] = await readImageDimensions(path.join(dir, savedName));
+        } catch {
+          /* dimensions optional */
+        }
+        added.push(savedName);
+        if (!g.cover) g.cover = savedName;
+      } catch (e) {
+        console.error("Image processing failed:", file.originalname, e);
+        skipped.push({ name: file.originalname || "file", reason: "Could not process image" });
+      }
     }
 
     g.updatedAt = new Date().toISOString();
     writeCatalog(catalog);
-    return { gallery: serializeGallery(g), added };
+    return { gallery: serializeGallery(g), added, skipped };
   }
 
   function removeImage(slug, filename) {
@@ -185,6 +285,7 @@ export function createPortfolioStore({ dataDir }) {
     if (!g) return null;
     const safe = path.basename(filename);
     g.images = g.images.filter((n) => n !== safe);
+    if (g.imageMeta) delete g.imageMeta[safe];
     if (g.cover === safe) g.cover = g.images[0] || null;
     const filePath = path.join(galleryDir(slug), safe);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -212,5 +313,6 @@ export function createPortfolioStore({ dataDir }) {
     removeImage,
     resolveImagePath,
     readCatalog,
+    ensureGalleryImageMeta,
   };
 }

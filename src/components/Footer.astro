@@ -3,8 +3,33 @@ import { SITE } from "../site.config";
 
 const year = new Date().getFullYear();
 ---
-<footer class="site-footer">
+<footer class="site-footer site-footer--studio">
   <div class="container">
-    <p>&copy; {year} {SITE.name}. All rights reserved.</p>
+    <div class="studio-footer-grid">
+      <div>
+        <p class="studio-footer-brand">{SITE.name}</p>
+        <p class="studio-footer-tagline">{SITE.tagline}</p>
+        <a href="/contact" class="studio-footer-cta">let's create together →</a>
+      </div>
+      <div>
+        <p class="studio-footer-heading">Explore</p>
+        <ul class="studio-footer-links">
+          <li><a href="/galleries">Galleries</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/contact">Booking & contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="studio-footer-heading">Connect</p>
+        <ul class="studio-footer-links">
+          <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          <li><a href="/galleries">View portfolio</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="studio-footer-bottom">
+      <span>&copy; {year} {SITE.name}</span>
+      <span>Photography &amp; visual stories</span>
+    </div>
   </div>
 </footer>

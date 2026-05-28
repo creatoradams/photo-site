@@ -1,15 +1,48 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { SITE } from "../../site.config";
 ---
-<Layout title="Gallery" description="Portfolio gallery.">
-  <div class="container" data-gallery-detail>
-    <h1 class="page-title" data-gallery-title>Loading…</h1>
-    <p class="prose hidden" data-gallery-desc></p>
-    <p style="margin: 1rem 0;">
-      <a href="/prints" class="btn btn-secondary hidden" data-gallery-print target="_blank" rel="noreferrer">Order prints</a>
-      <a href="/galleries" class="btn btn-secondary" style="margin-left: 0.5rem">All galleries</a>
-    </p>
-    <div class="gallery-grid" style="margin-top: 2rem;" data-gallery-lightbox data-gallery-grid></div>
+<Layout title="Gallery" description="Portfolio gallery." bodyClass="gallery-view-page">
+  <div data-gallery-page>
+    <section class="gallery-cover" data-gallery-cover aria-label="Gallery cover">
+      <div class="gallery-cover__bg" data-gallery-cover-bg aria-hidden="true"></div>
+      <a href="/" class="gallery-cover__brand" data-gallery-cover-brand>
+        <img src="/favicon.svg" alt="" width="40" height="40" class="gallery-cover__logo" />
+        <span class="gallery-cover__brand-text">{SITE.title}</span>
+      </a>
+      <div class="gallery-cover__bottom">
+        <div class="gallery-cover__info">
+          <h1 class="gallery-cover__title" data-gallery-cover-title>Loading…</h1>
+          <time class="gallery-cover__date" data-gallery-cover-date datetime=""></time>
+        </div>
+        <button type="button" class="gallery-cover__cta" data-gallery-enter>View gallery</button>
+      </div>
+      <p class="gallery-cover__scroll-hint" aria-hidden="true">Scroll</p>
+    </section>
+
+    <div class="gallery-body" id="gallery-photos" data-gallery-body>
+      <div class="container" data-gallery-detail>
+        <h1 class="page-title visually-hidden" data-gallery-title>Loading…</h1>
+        <p class="prose hidden" data-gallery-desc></p>
+        <p class="gallery-body-actions">
+          <a href="/prints" class="btn btn-secondary hidden" data-gallery-print target="_blank" rel="noreferrer">Order prints</a>
+          <a href="/galleries" class="btn btn-secondary">All galleries</a>
+        </p>
+        <div class="gallery-toolbar hidden" data-gallery-toolbar>
+          <button type="button" class="btn btn-secondary gallery-select-toggle" data-gallery-select-toggle aria-pressed="false">
+            <svg class="gallery-select-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
+            <span data-gallery-select-label>Select photos</span>
+          </button>
+          <button type="button" class="btn hidden" data-gallery-download>Download</button>
+          <span class="gallery-selection-count hidden" data-gallery-selection-count></span>
+        </div>
+        <p class="hidden" data-gallery-download-status><span class="spinner"></span> <span data-gallery-download-status-text>Saving photos…</span></p>
+        <div class="gallery-grid" data-gallery-lightbox data-gallery-grid></div>
+      </div>
+    </div>
   </div>
 </Layout>
 

@@ -2,11 +2,20 @@
 import Layout from "../layouts/Layout.astro";
 import { SITE } from "../site.config";
 ---
-<Layout title="Contact" description={`Contact ${SITE.name}.`}>
-  <div class="container prose">
-    <h1 class="page-title">Contact</h1>
-    <p>
-      Email me at <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-    </p>
+<Layout title="Contact" description="Get in touch — bookings and inquiries.">
+  <div class="container studio-page" data-site-page="contact">
+    <header class="studio-page-header">
+      <p class="studio-hero__eyebrow">Booking</p>
+      <h1 class="page-title" data-page-title>Contact</h1>
+      <div class="prose" data-page-body><p>Loading…</p></div>
+    </header>
+    <div class="studio-contact-card hidden" data-page-extra>
+      <p style="margin:0 0 0.5rem;color:var(--text-muted);font-size:0.85rem;">Email</p>
+      <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+    </div>
   </div>
 </Layout>
+
+<script>
+  import "../scripts/site-page.ts";
+</script>

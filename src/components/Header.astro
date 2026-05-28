@@ -1,27 +1,58 @@
 ﻿---
 import { SITE } from "../site.config";
 
-const nav = [
-  { href: "/", label: "Home" },
-  { href: "/galleries", label: "Galleries" },
+const navLeft = [
+  { href: "/galleries", label: "Work" },
   { href: "/about", label: "About" },
-  { href: "/prints", label: "Prints" },
-  { href: "/contact", label: "Contact" },
+];
+const navRight = [
+  { href: "/prints", label: "Prints", key: "prints" },
+  { href: "/contact", label: "Connect" },
 ];
 const pathname = Astro.url.pathname;
 ---
-<header class="site-header">
+<header class="site-header site-header--studio">
   <div class="container">
+    <button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="main-nav">
+      Menu
+    </button>
     <a href="/" class="logo">{SITE.name}</a>
-    <nav class="nav" aria-label="Main">
-      {nav.map((item) => (
-        <a
-          href={item.href}
-          aria-current={pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "page" : undefined}
-        >
-          {item.label}
-        </a>
-      ))}
-    </nav>
+    <div class="nav-wrap" id="main-nav" data-nav-wrap>
+      <nav class="nav nav--studio-left" aria-label="Primary left">
+        {navLeft.map((item) => (
+          <a
+            href={item.href}
+            aria-current={pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "page" : undefined}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+      <nav class="nav nav--studio-right" aria-label="Primary right">
+        {navRight.map((item) => (
+          <a
+            href={item.href}
+            class:list={[{ hidden: item.key === "prints" }]}
+            data-nav-link={item.key}
+            aria-current={pathname === item.href ? "page" : undefined}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </div>
   </div>
 </header>
+<script>
+  function initNavToggle() {
+    const btn = document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
+    const wrap = document.querySelector<HTMLElement>("[data-nav-wrap]");
+    if (!btn || !wrap) return;
+    btn.onclick = () => {
+      const open = wrap.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", String(open));
+    };
+  }
+  initNavToggle();
+  document.addEventListener("astro:page-load", initNavToggle);
+</script>

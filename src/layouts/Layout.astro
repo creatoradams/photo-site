@@ -1,5 +1,6 @@
 ﻿---
 import globalCss from "../styles/global.css?url";
+import studioCss from "../styles/studio.css?url";
 import "photoswipe/style.css";
 import { ClientRouter } from "astro:transitions";
 import Header from "../components/Header.astro";
@@ -12,9 +13,10 @@ interface Props {
   description?: string;
   image?: string;
   noindex?: boolean;
+  bodyClass?: string;
 }
 
-const { title, description = SITE.tagline, image, noindex = false } = Astro.props;
+const { title, description = SITE.tagline, image, noindex = false, bodyClass = "" } = Astro.props;
 const fullTitle =
   title === "Home" ? `${SITE.title} — Photography` : `${title} | ${SITE.title}`;
 ---
@@ -23,15 +25,33 @@ const fullTitle =
 <html lang="en">
   <head>
     <BaseHead title={fullTitle} description={description} image={image} noindex={noindex} />
+    <slot name="head" />
     <link rel="stylesheet" href={globalCss} transition:persist="app-styles" />
+    <link rel="stylesheet" href={studioCss} transition:persist="studio-styles" />
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("site-theme");
+          if (t !== "light" && t !== "dark") t = "dark";
+          document.documentElement.dataset.theme = t;
+          document.documentElement.style.colorScheme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
     <ClientRouter />
   </head>
-  <body>
+  <body class:list={[bodyClass]}>
     <Header transition:persist="site-header" />
     <main id="main-content">
       <slot />
     </main>
     <Footer transition:persist="site-footer" />
+    <script>
+      import "../scripts/site-nav.ts";
+      import "../scripts/site-theme.ts";
+    </script>
     <script>
       function updateNav() {
         const pathname = window.location.pathname;

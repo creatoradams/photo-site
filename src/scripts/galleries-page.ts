@@ -1,5 +1,6 @@
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import { api, formatDate, type PortfolioGallery } from "./api";
+import { setManageTab } from "./site-manage";
 
 type State = {
   galleries: PortfolioGallery[];
@@ -10,6 +11,7 @@ type State = {
 
 const state: State = { galleries: [], selected: null, authenticated: false, manageMode: false };
 let lightbox: PhotoSwipeLightbox | null = null;
+let storageIntervalId: number | null = null;
 
 const $ = <T extends HTMLElement>(sel: string, root: ParentNode = document) =>
   root.querySelector<T>(sel)!;
@@ -144,7 +146,7 @@ function renderGalleryDetail(g: PortfolioGallery) {
         <button type="button" class="btn btn-secondary" id="btn-settings">Settings</button>
         <label class="btn admin-upload-btn">
           + Add photos from computer
-          <input type="file" id="upload-input" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <input type="file" id="upload-input" accept="image/*" multiple hidden />
         </label>
       </div>
     </div>
@@ -154,10 +156,11 @@ function renderGalleryDetail(g: PortfolioGallery) {
           ? g.images
               .map(
                 (img) => `
-        <div class="admin-image-item" data-name="${img.name}">
+        <div class="admin-image-item ${g.cover?.includes(img.name) ? "is-cover" : ""}" data-name="${img.name}">
           <img src="${img.thumbUrl}" alt="" />
+          ${g.cover?.includes(img.name) ? `<span class="admin-cover-badge">Cover</span>` : ""}
           <div class="admin-image-actions">
-            ${g.cover?.includes(img.name) ? `<span class="badge">Cover</span>` : `<button type="button" class="btn-text" data-set-cover="${img.name}">Set cover</button>`}
+            <button type="button" class="btn-text" data-set-cover="${img.name}">Use as cover</button>
             <button type="button" class="btn-text btn-danger" data-delete="${img.name}">Delete</button>
           </div>
         </div>`
@@ -194,29 +197,116 @@ function renderGalleryDetail(g: PortfolioGallery) {
   });
 }
 
+const UPLOAD_CONCURRENCY = 4;
+
 async function uploadImages(slug: string, input: HTMLInputElement) {
-  if (!input.files?.length) return;
-  const form = new FormData();
-  for (const file of input.files) form.append("images", file);
+  const files = input.files ? [...input.files] : [];
+  input.value = "";
+  if (!files.length) return;
+
   const status = $("#upload-status");
-  status.textContent = "Uploading…";
-  status.classList.remove("hidden");
+  status.classList.remove("hidden", "error");
+  let totalAdded = 0;
+  let totalSkipped = 0;
+  const total = files.length;
+  let completed = 0;
+  let nextIndex = 0;
+
+  status.textContent = `Uploading 0 of ${total}…`;
+
+  async function uploadOne(file: File) {
+    const form = new FormData();
+    form.append("images", file);
+    const result = await api<{
+      gallery: PortfolioGallery;
+      added: string[];
+      skipped?: { name: string; reason: string }[];
+    }>(`/api/admin/galleries/${slug}/images`, { method: "POST", body: form });
+    totalAdded += result.added?.length ?? 0;
+    totalSkipped += result.skipped?.length ?? 0;
+    completed += 1;
+    status.textContent = `Uploading ${completed} of ${total}…`;
+  }
+
+  async function worker() {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= files.length) break;
+      await uploadOne(files[i]!);
+    }
+  }
+
   try {
-    await api(`/api/admin/galleries/${slug}/images`, { method: "POST", body: form });
+    const workers = Math.min(UPLOAD_CONCURRENCY, files.length);
+    await Promise.all(Array.from({ length: workers }, () => worker()));
+
     await refreshManage();
     selectGallery(slug);
-    await loadPublicGalleries();
-    status.textContent = "Upload complete.";
+
+    if (totalAdded === 0) {
+      status.textContent =
+        totalSkipped > 0
+          ? "No photos were added. Try JPEG or PNG, or upload fewer at a time."
+          : "No photos were added.";
+      status.classList.add("error");
+    } else {
+      status.textContent =
+        totalSkipped > 0
+          ? `Added ${totalAdded} photo(s). ${totalSkipped} skipped.`
+          : `Added ${totalAdded} photo(s).`;
+    }
   } catch (e) {
     status.textContent = e instanceof Error ? e.message : "Upload failed";
-    status.classList.add("message", "error");
+    status.classList.add("error");
   }
-  input.value = "";
-  setTimeout(() => status.classList.add("hidden"), 4000);
+
+  setTimeout(() => status.classList.add("hidden"), 8000);
 }
 
-function openSettings(g: PortfolioGallery) {
+function currentCoverFilename(g: PortfolioGallery) {
+  if (!g.cover) return "";
+  const match = g.images.find((img) => g.cover?.includes(img.name));
+  return match?.name || "";
+}
+
+function renderCoverPicker(g: PortfolioGallery, modal: HTMLElement) {
+  const section = $("#settings-cover-section", modal);
+  const grid = $("#settings-cover-grid", modal);
+  const hidden = $("#settings-cover", modal) as HTMLInputElement;
+  const current = currentCoverFilename(g);
+
+  if (!g.images.length) {
+    section.classList.add("hidden");
+    hidden.value = "";
+    return;
+  }
+
+  section.classList.remove("hidden");
+  hidden.value = current || g.images[0].name;
+
+  grid.innerHTML = g.images
+    .map(
+      (img) => `
+    <button type="button" class="admin-cover-option ${hidden.value === img.name ? "selected" : ""}" data-cover="${img.name}">
+      <img src="${img.thumbUrl}" alt="" />
+    </button>`
+    )
+    .join("");
+
+  grid.querySelectorAll<HTMLButtonElement>("[data-cover]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      hidden.value = btn.dataset.cover || "";
+      grid.querySelectorAll(".admin-cover-option").forEach((el) => el.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
+  });
+}
+
+async function openSettings(g: PortfolioGallery) {
   const modal = $("#settings-modal");
+  const fresh = await api<{ gallery: PortfolioGallery }>(`/api/admin/galleries/${g.slug}`);
+  g = fresh.gallery;
+
   show(modal, true);
   ($("#settings-title", modal) as HTMLInputElement).value = g.title;
   ($("#settings-desc", modal) as HTMLTextAreaElement).value = g.description;
@@ -224,11 +314,13 @@ function openSettings(g: PortfolioGallery) {
   ($("#settings-print", modal) as HTMLInputElement).value = g.printCollectionUrl;
   ($("#settings-private", modal) as HTMLInputElement).checked = g.private;
   ($("#settings-featured", modal) as HTMLInputElement).checked = g.featured;
+  renderCoverPicker(g, modal);
 
   const saveBtn = $("#settings-save", modal);
   const newSave = saveBtn.cloneNode(true);
   saveBtn.replaceWith(newSave);
   newSave.addEventListener("click", async () => {
+    const coverInput = ($("#settings-cover", modal) as HTMLInputElement).value;
     await api(`/api/admin/galleries/${g.slug}`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -238,12 +330,12 @@ function openSettings(g: PortfolioGallery) {
         printCollectionUrl: ($("#settings-print", modal) as HTMLInputElement).value,
         private: ($("#settings-private", modal) as HTMLInputElement).checked,
         featured: ($("#settings-featured", modal) as HTMLInputElement).checked,
+        cover: coverInput || undefined,
       }),
     });
     show(modal, false);
     await refreshManage();
     selectGallery(g.slug);
-    await loadPublicGalleries();
   });
 
   const deleteBtn = $("#settings-delete", modal);
@@ -256,7 +348,6 @@ function openSettings(g: PortfolioGallery) {
     state.selected = null;
     await refreshManage();
     $("#admin-detail").innerHTML = `<p class="prose admin-muted">Select a gallery or create a new one.</p>`;
-    await loadPublicGalleries();
   });
 }
 
@@ -270,22 +361,36 @@ function openNewGallery() {
   ($("#new-featured", modal) as HTMLInputElement).checked = false;
 }
 
+let creatingGallery = false;
+
 async function createGallery() {
+  if (creatingGallery) return;
+  creatingGallery = true;
+  const createBtn = document.querySelector<HTMLButtonElement>("#new-create");
+  if (createBtn) createBtn.disabled = true;
+
   const modal = $("#new-modal");
-  const { gallery } = await api<{ gallery: PortfolioGallery }>("/api/admin/galleries", {
-    method: "POST",
-    body: JSON.stringify({
-      title: ($("#new-title", modal) as HTMLInputElement).value,
-      description: ($("#new-desc", modal) as HTMLTextAreaElement).value,
-      date: ($("#new-date", modal) as HTMLInputElement).value,
-      private: ($("#new-private", modal) as HTMLInputElement).checked,
-      featured: ($("#new-featured", modal) as HTMLInputElement).checked,
-    }),
-  });
-  show(modal, false);
-  await refreshManage();
-  selectGallery(gallery.slug);
-  await loadPublicGalleries();
+  try {
+    const { gallery } = await api<{ gallery: PortfolioGallery }>("/api/admin/galleries", {
+      method: "POST",
+      body: JSON.stringify({
+        title: ($("#new-title", modal) as HTMLInputElement).value,
+        description: ($("#new-desc", modal) as HTMLTextAreaElement).value,
+        date: ($("#new-date", modal) as HTMLInputElement).value,
+        private: ($("#new-private", modal) as HTMLInputElement).checked,
+        featured: ($("#new-featured", modal) as HTMLInputElement).checked,
+      }),
+    });
+    show(modal, false);
+    await refreshManage();
+    selectGallery(gallery.slug);
+    await loadPublicGalleries();
+  } catch (e) {
+    alert(e instanceof Error ? e.message : "Could not create gallery");
+  } finally {
+    creatingGallery = false;
+    if (createBtn) createBtn.disabled = false;
+  }
 }
 
 async function selectGallery(slug: string) {
@@ -308,14 +413,17 @@ function openLogin() {
 function setManageMode(on: boolean) {
   if (!isManagePage()) return;
   state.manageMode = on;
-  show($("#manage-galleries-view"), on && state.authenticated);
   if (on && state.authenticated) {
+    setManageTab("galleries");
     refreshManage();
     if (!state.selected) {
       $("#admin-detail").innerHTML = `<p class="prose admin-muted">Select a gallery on the left, or create a new one.</p>`;
     }
+  } else if (!state.authenticated) {
+    show($("#manage-galleries-view"), false);
+    show($("#manage-pages-view"), false);
+    openLogin();
   }
-  if (on && !state.authenticated) openLogin();
 }
 
 function renderChrome() {
@@ -323,14 +431,89 @@ function renderChrome() {
   renderManageToolbar();
   if (state.authenticated) {
     setManageMode(true);
+    const storageSection = document.querySelector<HTMLElement>("[data-manage-storage]");
+    storageSection?.classList.remove("hidden");
+    loadStorageUsage().catch(() => {
+      const body = $("#storage-body", document);
+      body.innerHTML = `<p class="admin-muted">Could not load storage usage.</p>`;
+    });
+
+    const refreshBtn = document.querySelector<HTMLButtonElement>("#btn-refresh-storage");
+    if (refreshBtn && !refreshBtn.dataset.bound) {
+      refreshBtn.dataset.bound = "1";
+      refreshBtn.addEventListener("click", () => {
+        loadStorageUsage().catch(() => undefined);
+      });
+    }
+
+    if (storageIntervalId == null) {
+      storageIntervalId = window.setInterval(() => {
+        loadStorageUsage().catch(() => undefined);
+      }, 60000);
+    }
   } else {
     show($("#manage-galleries-view"), false);
     openLogin();
+    const storageSection = document.querySelector<HTMLElement>("[data-manage-storage]");
+    storageSection?.classList.add("hidden");
+    if (storageIntervalId != null) {
+      window.clearInterval(storageIntervalId);
+      storageIntervalId = null;
+    }
   }
 }
 
+function formatBytes(bytes: number) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(units.length - 1, Math.floor(Math.log10(n) / 3));
+  const v = n / Math.pow(1024, i);
+  return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+async function loadStorageUsage() {
+  const status = $("#storage-status", document);
+  const body = $("#storage-body", document);
+  if (!status || !body) return;
+
+  status.textContent = "Loading storage…";
+  body.innerHTML = "";
+
+  const res = await api<{
+    dataDir: string;
+    root: { totalBytes: number; freeBytes: number; usedBytes: number };
+    dataDirStats: { totalBytes: number; freeBytes: number; usedBytes: number };
+  }>("/api/admin/system/storage");
+
+  const rootUsed = formatBytes(res.root.usedBytes);
+  const rootTotal = formatBytes(res.root.totalBytes);
+  const rootFree = formatBytes(res.root.freeBytes);
+
+  const dataUsed = formatBytes(res.dataDirStats.usedBytes);
+  const dataTotal = formatBytes(res.dataDirStats.totalBytes);
+  const dataFree = formatBytes(res.dataDirStats.freeBytes);
+
+  status.textContent = "Storage usage";
+  body.innerHTML = `
+    <div style="display:grid; gap:0.5rem;">
+      <p style="margin:0;"><strong>/</strong>: ${rootUsed} used of ${rootTotal} (${rootFree} free)</p>
+      <p style="margin:0;"><strong>DATA_DIR</strong>: ${dataUsed} used of ${dataTotal} (${dataFree} free)</p>
+      <p style="margin:0;" class="admin-muted">Path: <code>${escapeHtml(res.dataDir)}</code></p>
+    </div>
+  `;
+}
+
+let managePageListenersBound = false;
+
 async function init() {
   if (!isManagePage()) return;
+  if (managePageListenersBound) {
+    const authed = await checkSession();
+    renderChrome();
+    return;
+  }
+  managePageListenersBound = true;
 
   document.querySelectorAll("[data-close-modal]").forEach((btn) => {
     btn.addEventListener("click", () => show(btn.closest(".modal") as HTMLElement, false));

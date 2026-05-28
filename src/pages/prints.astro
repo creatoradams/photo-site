@@ -2,8 +2,13 @@
 import Layout from "../layouts/Layout.astro";
 ---
 <Layout title="Prints" description="Order fine art prints.">
-  <div class="container prose">
-    <h1 class="page-title">Prints</h1>
-    <p><a href="https://example.com/prints" class="btn" target="_blank" rel="noopener">Visit print shop</a></p>
+  <div class="container prose" data-site-page="prints">
+    <h1 class="page-title" data-page-title>Prints</h1>
+    <div data-page-body><p>Loading…</p></div>
+    <p class="hidden" data-page-extra></p>
   </div>
 </Layout>
+
+<script>
+  import "../scripts/site-page.ts";
+</script>
