@@ -646,15 +646,9 @@
   height: 100%;
   align-items: stretch;
   touch-action: pan-x;
-  cursor: grab;
+  cursor: default;
   scrollbar-width: thin;
   scrollbar-color: rgba(220, 229, 223, 0.45) transparent;
-}
-
-.home-landing--atelier .atelier-film__track.is-reel-dragging {
-  cursor: grabbing;
-  scroll-snap-type: none;
-  user-select: none;
 }
 
 .home-landing--atelier .atelier-film__track.is-reel-wheeling {
@@ -675,6 +669,7 @@
   color: inherit;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
   scroll-snap-align: center;
+  cursor: pointer;
 }
 
 .home-landing--atelier .atelier-film__frame img {
@@ -696,6 +691,7 @@
   background: linear-gradient(to top, rgba(8, 13, 11, 0.72) 0%, rgba(8, 13, 11, 0.1) 55%, transparent 100%);
   opacity: 0;
   transition: opacity 0.25s ease;
+  pointer-events: none;
 }
 
 .home-landing--atelier .atelier-film__name {
@@ -1199,4 +1195,64 @@ body.home-reel-page .site-footer--studio {
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-style: italic;
+}
+
+.studio-contact-form {
+  max-width: 32rem;
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+.studio-contact-form__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.4rem;
+  margin: 0 0 1.25rem;
+}
+
+.studio-contact-form .form-group {
+  margin-bottom: 1.1rem;
+}
+
+.studio-contact-form label {
+  display: block;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.studio-contact-form input,
+.studio-contact-form textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.studio-contact-form textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+.studio-contact-form input:focus,
+.studio-contact-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(107, 154, 122, 0.2);
+}
+
+.studio-contact-form .btn {
+  margin-top: 0.25rem;
+}
+
+.studio-contact-form .message {
+  margin: 0 0 1rem;
 }

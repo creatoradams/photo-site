@@ -330,7 +330,18 @@ export function createSiteContentStore({ dataDir, portfolioStore }) {
       });
       const listed = portfolioStore.listGalleries({ includePrivate: opts.includePrivate });
       const allGalleries = listed.map(mapGallery);
-      const featuredGalleries = listed.filter((g) => g.featured).map(mapGallery);
+      // Featured galleries drive the home page reel. Sort by the manual
+      // homeOrder (lower = first); galleries without an order fall to the end,
+      // ordered by date (newest first) as a stable tiebreak.
+      const featuredGalleries = listed
+        .filter((g) => g.featured)
+        .sort((a, b) => {
+          const ao = typeof a.homeOrder === "number" ? a.homeOrder : Infinity;
+          const bo = typeof b.homeOrder === "number" ? b.homeOrder : Infinity;
+          if (ao !== bo) return ao - bo;
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        })
+        .map(mapGallery);
       return { page: home, gridImages, featuredGalleries, allGalleries };
     }
 

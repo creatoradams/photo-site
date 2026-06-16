@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { navigate } from "astro:transitions/client";
 
 type GridImage = {
   slug: string | null;
@@ -269,46 +270,6 @@ function enableReelScroll(track: HTMLElement) {
     reelScrollBy(track, delta);
   };
 
-  let dragging = false;
-  let startX = 0;
-  let startScroll = 0;
-  let dragged = false;
-
-  const onPointerDown = (event: PointerEvent) => {
-    if (event.button !== 0) return;
-    dragging = true;
-    dragged = false;
-    startX = event.clientX;
-    startScroll = track.scrollLeft;
-    track.setPointerCapture(event.pointerId);
-    track.classList.add("is-reel-dragging");
-  };
-
-  const onPointerMove = (event: PointerEvent) => {
-    if (!dragging) return;
-    const dx = event.clientX - startX;
-    if (Math.abs(dx) > 4) dragged = true;
-    track.scrollLeft = startScroll - dx;
-  };
-
-  const endDrag = (event: PointerEvent) => {
-    if (!dragging) return;
-    dragging = false;
-    track.classList.remove("is-reel-dragging");
-    try {
-      track.releasePointerCapture(event.pointerId);
-    } catch {
-      /* already released */
-    }
-  };
-
-  const onFrameClick = (event: MouseEvent) => {
-    if (!dragged) return;
-    event.preventDefault();
-    event.stopPropagation();
-    dragged = false;
-  };
-
   const onKeyDown = (event: KeyboardEvent) => {
     if (!document.body.classList.contains("home-reel-page")) return;
     const step = Math.min(420, Math.max(240, track.clientWidth * 0.55));
@@ -321,16 +282,31 @@ function enableReelScroll(track: HTMLElement) {
     }
   };
 
+  const onFrameClick = (event: MouseEvent) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const frame = (event.target as Element)?.closest<HTMLAnchorElement>("a.atelier-film__frame");
+    if (!frame?.href) return;
+    const href = frame.href;
+    event.preventDefault();
+    // Prefer SPA navigation, but always fall back to a hard navigation so a
+    // failed/unsupported transition can never leave the click doing nothing.
+    try {
+      const result = navigate(href) as unknown as Promise<unknown> | undefined;
+      if (result && typeof (result as Promise<unknown>).catch === "function") {
+        (result as Promise<unknown>).catch(() => window.location.assign(href));
+      }
+    } catch {
+      window.location.assign(href);
+    }
+  };
+
   const wheelOpts: AddEventListenerOptions = { passive: false, capture: true };
   const wheelTargets = reelWheelTargets(track);
   for (const el of wheelTargets) {
     el.addEventListener("wheel", onWheel, wheelOpts);
   }
-  track.addEventListener("pointerdown", onPointerDown);
-  track.addEventListener("pointermove", onPointerMove);
-  track.addEventListener("pointerup", endDrag);
-  track.addEventListener("pointercancel", endDrag);
-  track.addEventListener("click", onFrameClick, true);
+  track.addEventListener("click", onFrameClick);
   window.addEventListener("keydown", onKeyDown);
 
   reelScrollState.current = {
@@ -341,25 +317,10 @@ function enableReelScroll(track: HTMLElement) {
       for (const el of wheelTargets) {
         el.removeEventListener("wheel", onWheel, { capture: true });
       }
-      track.removeEventListener("pointerdown", onPointerDown);
-      track.removeEventListener("pointermove", onPointerMove);
-      track.removeEventListener("pointerup", endDrag);
-      track.removeEventListener("pointercancel", endDrag);
-      track.removeEventListener("click", onFrameClick, true);
+      track.removeEventListener("click", onFrameClick);
       window.removeEventListener("keydown", onKeyDown);
     },
   };
-}
-
-async function loadReelGalleries(): Promise<FeaturedGallery[]> {
-  const { galleries } = await api<{ galleries: FeaturedGallery[] }>("/api/portfolio/galleries", {
-    cache: "no-store",
-  });
-  return (galleries || []).map((g) => ({
-    slug: g.slug,
-    title: g.title,
-    cover: g.cover,
-  }));
 }
 
 function enableAtelierReveal(root: HTMLElement) {
@@ -528,23 +489,15 @@ async function init() {
   if (masonry) masonry.classList.add("home-masonry--loading");
 
   try {
-    const [homeRes, portfolioGalleries] = await Promise.all([
-      api<{
-        page: HomePage;
-        gridImages: GridImage[];
-        featuredGalleries?: FeaturedGallery[];
-        allGalleries?: FeaturedGallery[];
-      }>("/api/site/pages/home", { cache: "no-store" }),
-      loadReelGalleries().catch(() => [] as FeaturedGallery[]),
-    ]);
-    const { page, gridImages, featuredGalleries, allGalleries: homeAllGalleries } = homeRes;
+    const homeRes = await api<{
+      page: HomePage;
+      gridImages: GridImage[];
+      featuredGalleries?: FeaturedGallery[];
+    }>("/api/site/pages/home", { cache: "no-store" });
+    const { page, gridImages, featuredGalleries } = homeRes;
 
-    const reelGalleries =
-      portfolioGalleries.length > 0
-        ? portfolioGalleries
-        : homeAllGalleries?.length
-          ? homeAllGalleries
-          : featuredGalleries || [];
+    // The home page reel only shows galleries marked "featured on home page".
+    const reelGalleries = featuredGalleries || [];
 
     const featuredList =
       page.layout === "atelier" ? reelGalleries : (featuredGalleries || []).slice(0, 24);
@@ -556,14 +509,6 @@ async function init() {
         film?.setAttribute("data-reel-count", String(track.querySelectorAll(".atelier-film__frame").length));
         track.scrollLeft = 0;
         enableReelScroll(track);
-        requestAnimationFrame(() => enableReelScroll(track));
-        window.addEventListener(
-          "load",
-          () => {
-            enableReelScroll(track);
-          },
-          { once: true }
-        );
       }
     }
     masonry?.removeAttribute("aria-busy");

@@ -24,6 +24,7 @@ export type PortfolioGallery = {
   date: string;
   private: boolean;
   featured: boolean;
+  homeOrder: number | null;
   printCollectionUrl: string;
   cover: string | null;
   imageCount: number;

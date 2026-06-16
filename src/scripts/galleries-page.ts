@@ -123,7 +123,7 @@ function renderGalleryList() {
         <strong>${escapeHtml(g.title)}</strong>
         <span>${formatDate(g.date)} · ${g.imageCount} photos</span>
         ${g.private ? `<span class="badge badge-private">Private</span>` : ""}
-        ${g.featured ? `<span class="badge badge-featured">Featured</span>` : ""}
+        ${g.featured ? `<span class="badge badge-featured">Featured${g.homeOrder != null ? ` #${g.homeOrder}` : ""}</span>` : ""}
       </div>
     </button>`
     )
@@ -314,6 +314,8 @@ async function openSettings(g: PortfolioGallery) {
   ($("#settings-print", modal) as HTMLInputElement).value = g.printCollectionUrl;
   ($("#settings-private", modal) as HTMLInputElement).checked = g.private;
   ($("#settings-featured", modal) as HTMLInputElement).checked = g.featured;
+  ($("#settings-home-order", modal) as HTMLInputElement).value =
+    g.homeOrder == null ? "" : String(g.homeOrder);
   renderCoverPicker(g, modal);
 
   const saveBtn = $("#settings-save", modal);
@@ -321,6 +323,7 @@ async function openSettings(g: PortfolioGallery) {
   saveBtn.replaceWith(newSave);
   newSave.addEventListener("click", async () => {
     const coverInput = ($("#settings-cover", modal) as HTMLInputElement).value;
+    const homeOrderRaw = ($("#settings-home-order", modal) as HTMLInputElement).value.trim();
     await api(`/api/admin/galleries/${g.slug}`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -330,6 +333,7 @@ async function openSettings(g: PortfolioGallery) {
         printCollectionUrl: ($("#settings-print", modal) as HTMLInputElement).value,
         private: ($("#settings-private", modal) as HTMLInputElement).checked,
         featured: ($("#settings-featured", modal) as HTMLInputElement).checked,
+        homeOrder: homeOrderRaw === "" ? null : Number(homeOrderRaw),
         cover: coverInput || undefined,
       }),
     });

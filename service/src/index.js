@@ -35,12 +35,17 @@ const CLIENT_FILES_DIR = process.env.CLIENT_FILES_DIR || path.join(DATA_DIR, "cl
 const GALLERIES_PATH = path.join(DATA_DIR, "galleries.json");
 const SESSION_DAYS = 7;
 const MAGIC_MINUTES = 45;
+// Where contact-form inquiries are delivered. Falls back to the SMTP sender.
+const CONTACT_TO = process.env.CONTACT_TO || process.env.SMTP_FROM || "hello@adamsphoto.net";
 
 const ALLOWED_ORIGINS = process.env.SITE_URL
   ? [process.env.SITE_URL, "http://localhost:4321", "http://localhost:3000"]
   : ["http://localhost:4321", "http://localhost:3000"];
 
 const app = express();
+// Behind Caddy (reverse proxy): trust the first proxy hop so req.ip and
+// express-rate-limit key on the real client IP, not the proxy's.
+app.set("trust proxy", 1);
 
 // Security headers
 app.use((_req, res, next) => {
@@ -277,6 +282,57 @@ app.post("/api/download/zip", (req, res) => {
     archive.file(path.join(dir, f), { name: f });
   }
   archive.finalize();
+});
+
+const contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function escapeHtmlEmail(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+app.post("/api/contact", contactLimiter, async (req, res) => {
+  const name = String(req.body?.name || "").trim().slice(0, 200);
+  const email = normalizeEmail(req.body?.email);
+  const message = String(req.body?.message || "").trim().slice(0, 5000);
+  // Honeypot: real users never see/fill this field. Bots usually do.
+  const honeypot = String(req.body?.company || "").trim();
+
+  if (honeypot) return res.json({ ok: true });
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
+  }
+  if (message.length < 2) {
+    return res.status(400).json({ error: "Please enter a message." });
+  }
+
+  if (!checkRate(`contact:${req.ip}`, 5)) {
+    return res.status(429).json({ error: "Too many messages right now. Please try again later." });
+  }
+
+  if (!transporter) {
+    console.log("[dev] Contact message from", email, "-", name, "\n", message);
+    return res.json({ ok: true });
+  }
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || "gallery@adamsphoto.net",
+      to: CONTACT_TO,
+      replyTo: email,
+      subject: `New inquiry from ${name || email}`,
+      text: `From: ${name || "(no name given)"} <${email}>\n\n${message}\n`,
+      html: `<p><strong>From:</strong> ${escapeHtmlEmail(name || "(no name given)")} &lt;${escapeHtmlEmail(email)}&gt;</p><p style="white-space:pre-wrap">${escapeHtmlEmail(message)}</p>`,
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Contact SMTP error:", err);
+    res.status(500).json({ error: "Could not send your message. Please email directly." });
+  }
 });
 
 app.get("/api/health", (_, res) => res.json({ ok: true }));

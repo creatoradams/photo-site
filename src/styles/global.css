@@ -547,15 +547,18 @@ main,
 ::view-transition-old(root) {
   animation: page-fade-out 0.2s ease-out both;
   mix-blend-mode: normal;
+  pointer-events: none;
 }
 
 ::view-transition-new(root) {
   animation: page-fade-in 0.25s ease-in both;
   mix-blend-mode: normal;
+  pointer-events: none;
 }
 
 ::view-transition-group(root) {
   animation-duration: 0.25s;
+  pointer-events: none;
 }
 
 /* Persisted chrome should not animate or rescale */

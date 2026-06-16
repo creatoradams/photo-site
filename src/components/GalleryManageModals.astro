@@ -73,6 +73,11 @@
     </div>
     <label class="admin-check"><input type="checkbox" id="settings-private" /> Private (unlisted — share the gallery link with clients)</label>
     <label class="admin-check"><input type="checkbox" id="settings-featured" /> Featured on home page</label>
+    <div class="form-group">
+      <label for="settings-home-order">Home page order (optional)</label>
+      <input type="number" id="settings-home-order" step="1" min="1" placeholder="e.g. 1, 2, 3…" />
+      <p class="admin-muted" style="margin:0.35rem 0 0">Lower numbers show first in the home page reel. Leave blank to fall back to newest date. Only applies when “Featured on home page” is checked.</p>
+    </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-danger" id="settings-delete">Delete gallery</button>
       <span style="flex:1"></span>

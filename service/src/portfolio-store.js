@@ -81,6 +81,7 @@ export function createPortfolioStore({ dataDir }) {
       date: g.date,
       private: !!g.private,
       featured: !!g.featured,
+      homeOrder: typeof g.homeOrder === "number" ? g.homeOrder : null,
       printCollectionUrl: g.printCollectionUrl || "",
       cover: cover ? imageUrl(g.slug, cover) : null,
       imageCount: (g.images || []).length,
@@ -169,6 +170,12 @@ export function createPortfolioStore({ dataDir }) {
     if (patch.date !== undefined) g.date = String(patch.date).slice(0, 10);
     if (patch.private !== undefined) g.private = !!patch.private;
     if (patch.featured !== undefined) g.featured = !!patch.featured;
+    if (patch.homeOrder !== undefined) {
+      const n =
+        patch.homeOrder === null || patch.homeOrder === "" ? null : Number(patch.homeOrder);
+      if (n === null || !Number.isFinite(n)) delete g.homeOrder;
+      else g.homeOrder = n;
+    }
     if (patch.printCollectionUrl !== undefined) g.printCollectionUrl = String(patch.printCollectionUrl);
     if (patch.cover !== undefined) {
       const cover = patch.cover ? path.basename(patch.cover) : null;
