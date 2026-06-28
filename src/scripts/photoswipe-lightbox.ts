@@ -27,8 +27,6 @@ export function lightboxItemHtml(img: LightboxImage, index: number) {
       data-pswp-width="${w}"
       data-pswp-height="${h}"
       ${cropped ? 'data-cropped="true"' : ""}
-      target="_blank"
-      rel="noreferrer"
     >
       <img
         src="${thumbSrc}"
@@ -54,7 +52,12 @@ export function refreshLightboxDimensions(container: ParentNode) {
 
 export function initGalleryLightbox(container?: ParentNode) {
   const root = container || document;
-  const gallery = root.querySelector<HTMLElement>("[data-gallery-lightbox]");
+  // The container passed in is often the gallery element itself, so match it
+  // directly before falling back to searching descendants.
+  const gallery =
+    root instanceof Element && root.matches("[data-gallery-lightbox]")
+      ? root
+      : root.querySelector<HTMLElement>("[data-gallery-lightbox]");
   if (!gallery) return null;
 
   refreshLightboxDimensions(gallery);

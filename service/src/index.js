@@ -300,10 +300,18 @@ app.post("/api/contact", contactLimiter, async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const message = String(req.body?.message || "").trim().slice(0, 5000);
   // Honeypot: real users never see/fill this field. Bots usually do.
-  const honeypot = String(req.body?.company || "").trim();
+  const honeypot = String(req.body?.x_field_check || "").trim();
 
-  if (honeypot) return res.json({ ok: true });
-  if (!EMAIL_RE.test(email)) {
+  const emailOk = EMAIL_RE.test(email);
+  console.log(
+    `[contact] received ip=${req.ip} emailValid=${emailOk} msgLen=${message.length} honeypot=${honeypot ? "TRIPPED" : "ok"}`
+  );
+
+  if (honeypot) {
+    console.log("[contact] dropped as spam (honeypot filled)");
+    return res.json({ ok: true });
+  }
+  if (!emailOk) {
     return res.status(400).json({ error: "Please enter a valid email address." });
   }
   if (message.length < 2) {
@@ -311,6 +319,7 @@ app.post("/api/contact", contactLimiter, async (req, res) => {
   }
 
   if (!checkRate(`contact:${req.ip}`, 5)) {
+    console.log("[contact] rate limited", req.ip);
     return res.status(429).json({ error: "Too many messages right now. Please try again later." });
   }
 
@@ -320,14 +329,16 @@ app.post("/api/contact", contactLimiter, async (req, res) => {
   }
 
   try {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || "gallery@adamsphoto.net",
+    const fromAddr = process.env.SMTP_FROM || "gallery@adamsphoto.net";
+    const info = await transporter.sendMail({
+      from: { name: "adamsphoto.net", address: fromAddr },
       to: CONTACT_TO,
-      replyTo: email,
+      replyTo: name ? { name, address: email } : email,
       subject: `New inquiry from ${name || email}`,
-      text: `From: ${name || "(no name given)"} <${email}>\n\n${message}\n`,
-      html: `<p><strong>From:</strong> ${escapeHtmlEmail(name || "(no name given)")} &lt;${escapeHtmlEmail(email)}&gt;</p><p style="white-space:pre-wrap">${escapeHtmlEmail(message)}</p>`,
+      text: `New website inquiry\n\nFrom: ${name || "(no name given)"} <${email}>\n\n${message}\n\n— Sent from the adamsphoto.net contact form\n`,
+      html: `<p>New website inquiry</p><p><strong>From:</strong> ${escapeHtmlEmail(name || "(no name given)")} &lt;${escapeHtmlEmail(email)}&gt;</p><p style="white-space:pre-wrap">${escapeHtmlEmail(message)}</p><hr /><p style="color:#888;font-size:12px">Sent from the adamsphoto.net contact form. Reply directly to respond to the sender.</p>`,
     });
+    console.log(`[contact] sent to ${CONTACT_TO} messageId=${info.messageId} response=${info.response}`);
     res.json({ ok: true });
   } catch (err) {
     console.error("Contact SMTP error:", err);

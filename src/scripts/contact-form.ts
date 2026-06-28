@@ -21,7 +21,7 @@ function initContactForm() {
       name: field("name").trim(),
       email: field("email").trim(),
       message: field("message").trim(),
-      company: field("company").trim(),
+      x_field_check: field("x_field_check").trim(),
     };
 
     if (!payload.email || !payload.message) {

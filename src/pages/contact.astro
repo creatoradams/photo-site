@@ -28,8 +28,8 @@ import { SITE } from "../site.config";
         <label for="contact-message">Message</label>
         <textarea id="contact-message" name="message" rows="6" required placeholder="Tell me a little about what you're looking for…"></textarea>
       </div>
-      <div aria-hidden="true" style="position:absolute;left:-5000px;" tabindex="-1">
-        <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off" /></label>
+      <div aria-hidden="true" style="position:absolute;left:-5000px;width:1px;height:1px;overflow:hidden;" tabindex="-1">
+        <label>Leave this field empty<input type="text" name="x_field_check" tabindex="-1" autocomplete="off" /></label>
       </div>
       <p class="message error hidden" data-contact-error role="alert"></p>
       <p class="message success hidden" data-contact-success role="status"></p>
