@@ -1,17 +1,29 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const ADMIN_COOKIE = "photo_admin";
 const ADMIN_DAYS = 14;
+const JWT_ALGORITHMS = ["HS256"];
+
+/** Constant-time string comparison (hash to fixed length first to avoid leaking length). */
+function safeEqual(a, b) {
+  const ah = crypto.createHash("sha256").update(String(a)).digest();
+  const bh = crypto.createHash("sha256").update(String(b)).digest();
+  return crypto.timingSafeEqual(ah, bh);
+}
 
 export function createAdminAuth({ authSecret, adminPassword }) {
   function signAdmin() {
-    return jwt.sign({ type: "admin" }, authSecret, { expiresIn: `${ADMIN_DAYS}d` });
+    return jwt.sign({ type: "admin" }, authSecret, {
+      algorithm: "HS256",
+      expiresIn: `${ADMIN_DAYS}d`,
+    });
   }
 
   function verifyAdmin(token) {
     if (!token) return false;
     try {
-      const p = jwt.verify(token, authSecret);
+      const p = jwt.verify(token, authSecret, { algorithms: JWT_ALGORITHMS });
       return p.type === "admin";
     } catch {
       return false;
@@ -34,7 +46,7 @@ export function createAdminAuth({ authSecret, adminPassword }) {
 
   function login(password) {
     if (!adminPassword) return { ok: false, error: "Admin not configured" };
-    if (password !== adminPassword) return { ok: false, error: "Invalid password" };
+    if (!safeEqual(password, adminPassword)) return { ok: false, error: "Invalid password" };
     return { ok: true, token: signAdmin() };
   }
 

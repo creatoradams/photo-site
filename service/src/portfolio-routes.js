@@ -1,30 +1,8 @@
 import express from "express";
-import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 import archiver from "archiver";
-
-const IMAGE_MIME = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-  ".tif": "image/tiff",
-  ".tiff": "image/tiff",
-};
-
-function imageMime(filePath) {
-  return IMAGE_MIME[path.extname(filePath).toLowerCase()] || "application/octet-stream";
-}
-
-function getWebpCachePath(filePath, cacheKey) {
-  const dir = path.join(path.dirname(filePath), ".img-cache");
-  const base = path.basename(filePath, path.extname(filePath));
-  return {
-    dir,
-    path: path.join(dir, `${base}.${cacheKey}.webp`),
-  };
-}
+import { isWebpVariant, sendWebpVariant, sendOriginalImage } from "./image-service.js";
 
 export function createPortfolioRoutes(store) {
   const router = express.Router();
@@ -80,83 +58,14 @@ export function createPortfolioRoutes(store) {
     const filePath = store.resolveImagePath(req.params.slug, req.params.filename);
     if (!filePath || !fs.existsSync(filePath)) return res.status(404).end();
 
-    const cacheLong = "public, max-age=604800, immutable";
-
-    if (req.query.size === "thumb") {
-      try {
-        const cache = getWebpCachePath(filePath, "thumb-600-600-80");
-        if (fs.existsSync(cache.path)) {
-          res.setHeader("Content-Type", "image/webp");
-          res.setHeader("Cache-Control", cacheLong);
-          return res.sendFile(cache.path);
-        }
-        const buf = await sharp(filePath)
-          .rotate()
-          .resize({ width: 600, height: 600, fit: "cover" })
-          .webp({ quality: 80 })
-          .toBuffer();
-        fs.mkdirSync(cache.dir, { recursive: true });
-        fs.writeFileSync(cache.path, buf);
-        res.setHeader("Content-Type", "image/webp");
-        res.setHeader("Cache-Control", cacheLong);
-        return res.sendFile(cache.path);
-      } catch {
-        return res.status(500).end();
-      }
+    if (isWebpVariant(req.query.size)) {
+      return void (await sendWebpVariant(res, filePath, req.query.size));
     }
 
-    if (req.query.size === "grid") {
-      try {
-        const cache = getWebpCachePath(filePath, "grid-720-82");
-        if (fs.existsSync(cache.path)) {
-          res.setHeader("Content-Type", "image/webp");
-          res.setHeader("Cache-Control", cacheLong);
-          return res.sendFile(cache.path);
-        }
-        const buf = await sharp(filePath)
-          .rotate()
-          .resize({ width: 720, withoutEnlargement: true })
-          .webp({ quality: 82 })
-          .toBuffer();
-        fs.mkdirSync(cache.dir, { recursive: true });
-        fs.writeFileSync(cache.path, buf);
-        res.setHeader("Content-Type", "image/webp");
-        res.setHeader("Cache-Control", cacheLong);
-        return res.sendFile(cache.path);
-      } catch {
-        return res.status(500).end();
-      }
-    }
-
-    if (req.query.size === "display") {
-      try {
-        const cache = getWebpCachePath(filePath, "display-1920-88");
-        if (fs.existsSync(cache.path)) {
-          res.setHeader("Content-Type", "image/webp");
-          res.setHeader("Cache-Control", cacheLong);
-          return res.sendFile(cache.path);
-        }
-        const buf = await sharp(filePath)
-          .rotate()
-          .resize({ width: 1920, withoutEnlargement: true })
-          .webp({ quality: 88 })
-          .toBuffer();
-        fs.mkdirSync(cache.dir, { recursive: true });
-        fs.writeFileSync(cache.path, buf);
-        res.setHeader("Content-Type", "image/webp");
-        res.setHeader("Cache-Control", cacheLong);
-        return res.sendFile(cache.path);
-      } catch {
-        return res.status(500).end();
-      }
-    }
-
-    res.setHeader("Content-Type", imageMime(filePath));
-    res.setHeader("Cache-Control", "public, max-age=86400");
-    if (req.query.download === "1") {
-      res.setHeader("Content-Disposition", `attachment; filename="${path.basename(filePath)}"`);
-    }
-    res.sendFile(filePath);
+    sendOriginalImage(res, filePath, {
+      cacheControl: "public, max-age=86400",
+      download: req.query.download === "1",
+    });
   });
 
   return router;

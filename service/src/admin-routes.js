@@ -1,8 +1,18 @@
 import express from "express";
 import multer from "multer";
+import rateLimit from "express-rate-limit";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+
+// Brute-force protection for the single admin password.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Please try again in 15 minutes." },
+});
 
 function statfsBytes(targetPath) {
   const s = fs.statfsSync(targetPath);
@@ -43,7 +53,7 @@ const upload = multer({
 export function createAdminRoutes(store, adminAuth, siteStore) {
   const router = express.Router();
 
-  router.post("/login", (req, res) => {
+  router.post("/login", loginLimiter, (req, res) => {
     const result = adminAuth.login(req.body?.password || "");
     if (!result.ok) return res.status(401).json({ error: result.error });
     adminAuth.setAdminCookie(res, result.token);

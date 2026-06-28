@@ -1,27 +1,5 @@
 import express from "express";
-import path from "path";
-import fs from "fs";
-import sharp from "sharp";
-
-const IMAGE_MIME = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-  ".tif": "image/tiff",
-  ".tiff": "image/tiff",
-};
-
-const CACHE_LONG = "public, max-age=604800, immutable";
-
-function getWebpCachePath(filePath, cacheKey) {
-  const dir = path.join(path.dirname(filePath), ".img-cache");
-  const base = path.basename(filePath, path.extname(filePath));
-  return {
-    dir,
-    path: path.join(dir, `${base}.${cacheKey}.webp`),
-  };
-}
+import { isWebpVariant, sendWebpVariant, sendOriginalImage } from "./image-service.js";
 
 export function createSiteRoutes(siteStore) {
   const router = express.Router();
@@ -45,56 +23,11 @@ export function createSiteRoutes(siteStore) {
     const filePath = siteStore.resolveAssetPath(req.params.filename);
     if (!filePath) return res.status(404).end();
 
-    if (req.query.size === "grid") {
-      try {
-        const cache = getWebpCachePath(filePath, "grid-720-82");
-        if (fs.existsSync(cache.path)) {
-          res.setHeader("Content-Type", "image/webp");
-          res.setHeader("Cache-Control", CACHE_LONG);
-          return res.sendFile(cache.path);
-        }
-        const buf = await sharp(filePath)
-          .rotate()
-          .resize({ width: 720, withoutEnlargement: true })
-          .webp({ quality: 82 })
-          .toBuffer();
-        fs.mkdirSync(cache.dir, { recursive: true });
-        fs.writeFileSync(cache.path, buf);
-        res.setHeader("Content-Type", "image/webp");
-        res.setHeader("Cache-Control", CACHE_LONG);
-        return res.sendFile(cache.path);
-      } catch {
-        return res.status(500).end();
-      }
+    if (isWebpVariant(req.query.size)) {
+      return void (await sendWebpVariant(res, filePath, req.query.size));
     }
 
-    if (req.query.size === "display") {
-      try {
-        const cache = getWebpCachePath(filePath, "display-1920-88");
-        if (fs.existsSync(cache.path)) {
-          res.setHeader("Content-Type", "image/webp");
-          res.setHeader("Cache-Control", CACHE_LONG);
-          return res.sendFile(cache.path);
-        }
-        const buf = await sharp(filePath)
-          .rotate()
-          .resize({ width: 1920, withoutEnlargement: true })
-          .webp({ quality: 88 })
-          .toBuffer();
-        fs.mkdirSync(cache.dir, { recursive: true });
-        fs.writeFileSync(cache.path, buf);
-        res.setHeader("Content-Type", "image/webp");
-        res.setHeader("Cache-Control", CACHE_LONG);
-        return res.sendFile(cache.path);
-      } catch {
-        return res.status(500).end();
-      }
-    }
-
-    const ext = path.extname(filePath).toLowerCase();
-    res.setHeader("Content-Type", IMAGE_MIME[ext] || "application/octet-stream");
-    res.setHeader("Cache-Control", CACHE_LONG);
-    res.sendFile(filePath);
+    sendOriginalImage(res, filePath);
   });
 
   return router;

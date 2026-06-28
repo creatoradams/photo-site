@@ -1,15 +1,28 @@
 adamsphoto.net, www.adamsphoto.net {
-    root * /var/www/photo-site
-    file_server
+	root * /var/www/photo-site
+	file_server
 
-    handle /api/* {
-        reverse_proxy localhost:8080
-    }
+	handle /api/* {
+		reverse_proxy localhost:8080
+	}
 
-    encode gzip zstd
+	# Page-level security headers for the static site. Scoped to non-API paths so
+	# they don't duplicate the headers the Node API already sets on /api/*.
+	@site not path /api/*
+	header @site {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	encode gzip zstd
 }
 
 # Optional: redirect old domain
 adamsphoto.co, www.adamsphoto.co {
-    redir https://adamsphoto.net{uri} permanent
+	redir https://adamsphoto.net{uri} permanent
 }
